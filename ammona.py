@@ -107,26 +107,33 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 4):
         conn.close()
         return
 
+        # --- nowe: deterministyczna rotacja tygodniowa (1 zadanie na dziecko na cały tydzień) ---
     children = ["Kamil", "Ania", "Dominik", "Mateusz"]
-        # zamiast base_pattern — jednolita lista typów zadań, która będzie rotować
     task_cycle = ["Kuchnia", "Podlogi", "Pranie", "Lazienki"]
 
+    # oblicz poniedziałek bieżącego tygodnia
     today = date.today()
-    start_date = today - timedelta(days=today.weekday())
+    monday_this_week = today - timedelta(days=today.weekday())
+
+    # funkcja zwracająca numer tygodnia względem stałej epoki (poniedziałek)
+    def week_index_for_date(d: date, epoch: date = date(2020, 1, 6)):
+        return (d - epoch).days // 7
+
+    start_week_idx = week_index_for_date(monday_this_week)
 
     inserts = []
-    for week_idx in range(weeks_ahead):
-        for weekday in range(7):
-            this_date = start_date + timedelta(days=week_idx*7 + weekday)
-            d_str = this_date.isoformat()
-            for base_idx, base_child in enumerate(children):
-                # wybieramy zadanie jako element cyklu przesunięty o base_idx + week_idx
-                task_index = (weekday + week_idx + base_idx) % len(task_cycle)
-                task = task_cycle[task_index]
-                # przypisujemy zadanie do dziecka docelowego (rotacja przydziału dzieci)
-                target_idx = (base_idx + week_idx) % len(children)
-                target_child = children[target_idx]
-                inserts.append((target_child, d_str, task))
+    for w in range(weeks_ahead):
+        this_week_idx = start_week_idx + w
+        week_monday = monday_this_week + timedelta(weeks=w)
+        # dla każdego dziecka obliczamy jedno zadanie na cały tydzień
+        for base_idx, child in enumerate(children):
+            task_index = (base_idx + this_week_idx) % len(task_cycle)
+            task = task_cycle[task_index]
+            # wstaw wpisy na każdy dzień tygodnia z tym samym zadaniem
+            for weekday in range(7):
+                this_date = week_monday + timedelta(days=weekday)
+                inserts.append((child, this_date.isoformat(), task))
+
 
     cur.executemany("INSERT INTO DyzuryDomowe (dziecko, data, dyzor) VALUES (?, ?, ?)", inserts)
     conn.commit()
