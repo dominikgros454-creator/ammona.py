@@ -272,19 +272,44 @@ if display_names:
                                 other.setdefault(key or "Inni", []).append({"id": rid, "date": d_str, "task": task, "done": bool(done), "photo": photo})
 
                         # wyświetl w ustalonej kolejności
-                        for child in order:
-                            tasks = by_child.get(child, [])
-                            st.markdown(f"#### {child} — {len(tasks)} wpisów")
+                        for child, tasks in by_child.items():
+                            st.markdown(f"#### {child}")
+                            left, right = st.columns([4,1])
+
+                            # Konsolidacja: pokaż 1 dyżur tygodniowy na dziecko
                             if not tasks:
-                                st.info("Brak dyżurów dla tego dziecka w tym tygodniu.")
+                                with left:
+                                    st.info("Brak dyżurów dla tego dziecka w tym tygodniu.")
+                                with right:
+                                    st.markdown("**Wykonane**\n0/0")
                             else:
-                                for t in tasks:
-                                    status = "✅" if t["done"] else "❌"
-                                    st.write(f"{status} **{t['date']}** — {t['task']}  (id:{t['id']})")
-                                    if t["photo"]:
-                                        p = Path(t["photo"])
+                                from collections import Counter
+                                # zbierz nazwy zadań i daty dla danego dziecka (z rows_today)
+                                task_names = [t["task"] for t in tasks if t.get("task")]
+                                cnt = Counter(task_names)
+                                most_common = sorted(cnt.items(), key=lambda x: (-x[1], x[0]))[0][0] if cnt else ""
+                                # oblicz status wykonania (ile dni oznaczono jako done)
+                                done_count = sum(1 for t in tasks if t.get("done"))
+                                total_days = len(tasks)
+                                # zakres dat (pokazujemy poniedziałek-niedziela dla wpisów)
+                                dates = sorted({t["date"] for t in tasks})
+                                week_from = dates[0] if dates else ""
+                                week_to = dates[-1] if dates else ""
+                                # wyświetlanie
+                                with left:
+                                    if len(cnt) > 1:
+                                        st.warning(f"Uwaga: wykryto różne zadania dla {child} w tym tygodniu. Pokazano najczęstsze: **{most_common}**")
+                                    status = "✅" if done_count == total_days and total_days > 0 else "❌"
+                                    st.write(f"{status} **{week_from} — {week_to}** — **{most_common}**  (dni zapisane: {total_days})")
+                                    # pokaż ewentualne pierwsze zdjęcie
+                                    first_photo = next((t.get("photo") for t in tasks if t.get("photo")), None)
+                                    if first_photo:
+                                        p = Path(first_photo)
                                         if p.exists():
                                             st.image(str(p), width=160)
+                                with right:
+                                    st.markdown(f"**Wykonane**\n{done_count}/{total_days}")
+
                             st.markdown("---")
 
                         # pokaż też dzieci nietypowe
