@@ -108,31 +108,31 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 4):
         return
 
         # --- nowe: deterministyczna rotacja tygodniowa (1 zadanie na dziecko na cały tydzień) ---
-    children = ["Kamil", "Ania", "Dominik", "Mateusz"]
-    task_cycle = ["Kuchnia", "Podlogi", "Pranie", "Lazienki"]
+        # === prosty tygodniowy rozkład: 1 dyżur (7 dni) na dziecko, rotacja co tydzień ===
+        children = ["Kamil", "Ania", "Dominik", "Mateusz"]
+        task_cycle = ["Kuchnia", "Podlogi", "Pranie", "Lazienki"]
 
-    # oblicz poniedziałek bieżącego tygodnia
-    today = date.today()
-    monday_this_week = today - timedelta(days=today.weekday())
+        today = date.today()
+        # poniedziałek bieżącego tygodnia
+        monday_this_week = today - timedelta(days=today.weekday())
 
-    # funkcja zwracająca numer tygodnia względem stałej epoki (poniedziałek)
-    def week_index_for_date(d: date, epoch: date = date(2020, 1, 6)):
-        return (d - epoch).days // 7
+        # numer tygodnia względem stałej epoki (poniedziałek) — deterministyczna rotacja
+        def week_index_for_date(d: date, epoch: date = date(2020,1,6)):
+            return (d - epoch).days // 7
 
-    start_week_idx = week_index_for_date(monday_this_week)
+        start_week_idx = week_index_for_date(monday_this_week)
 
-    inserts = []
-    for w in range(weeks_ahead):
-        this_week_idx = start_week_idx + w
-        week_monday = monday_this_week + timedelta(weeks=w)
-        # dla każdego dziecka obliczamy jedno zadanie na cały tydzień
-        for base_idx, child in enumerate(children):
-            task_index = (base_idx + this_week_idx) % len(task_cycle)
-            task = task_cycle[task_index]
-            # wstaw wpisy na każdy dzień tygodnia z tym samym zadaniem
-            for weekday in range(7):
-                this_date = week_monday + timedelta(days=weekday)
-                inserts.append((child, this_date.isoformat(), task))
+        inserts = []
+        for w in range(weeks_ahead):
+            this_week_idx = start_week_idx + w
+            week_monday = monday_this_week + timedelta(weeks=w)
+            # każdy child ma jedno zadanie na cały tydzień
+            for base_idx, child in enumerate(children):
+                task = task_cycle[(base_idx + this_week_idx) % len(task_cycle)]
+                for weekday in range(7):
+                    d = (week_monday + timedelta(days=weekday)).isoformat()
+                    inserts.append((child, d, task))
+
 
 
         # filtruj duplikaty — dodajemy tylko te wpisy, których jeszcze nie ma
