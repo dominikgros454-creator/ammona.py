@@ -86,6 +86,37 @@ def render_expander_uploader(rid: int, cur, conn):
 
     return saved, saved_path
 
+# --- helpery do normalizacji nazw zadań ---
+TASK_ALIASES = {
+    "lazienki": "Łazienki",
+    "lazienka": "Łazienki",
+    "łazienki": "Łazienki",
+    "kuchnia": "Kuchnia",
+    "pranie": "Pranie",
+    "podlogi": "Podłogi",
+    "podłogi": "Podłogi",
+    "podloga": "Podłogi",
+    "sprzatanie": "Sprzątanie",
+}
+
+def canonical_task_name(raw: str) -> str:
+    """Zamienia różne warianty na ujednoliconą formę (z wielką literą i polskimi znakami)."""
+    if not raw:
+        return raw
+    s = str(raw).strip().lower()
+    # usuń spacje, kropki itp. -> prosty alias
+    s = s.replace(" ", "").replace(".", "").replace("-", "")
+    # spróbuj znaleźć alias bez polskich znaków też
+    # zamień ł -> l aby dopasować różne wpisy
+    s_no_l = s.replace("ł", "l")
+    for key in list(TASK_ALIASES.keys()):
+        key_no_l = key.replace("ł", "l")
+        if s == key or s == key_no_l or s_no_l == key_no_l:
+            return TASK_ALIASES[key]
+    # fallback: capitalize first letter
+    return raw.strip().capitalize()
+
+# --- nowa create_db_and_samples (generuje rotację i normalizuje nazwy) ---
 def create_db_and_samples(path: Path, weeks_ahead: int = 8):
     conn = sqlite3.connect(str(path))
     cur = conn.cursor()
@@ -101,13 +132,13 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 8):
     """)
     conn.commit()
 
-    # --- dane bazowe ---
+    # --- dane bazowe (kolejność dzieci i zadań startowego tygodnia) ---
     children = ["Kamil", "Ania", "Dominik", "Mateusz"]
-    base_tasks = ["Lazienki", "Kuchnia", "Pranie", "Podlogi"]
+    # lista bazowa (odpowiada tygodniowi startowemu 03.11.2025)
+    base_tasks_display = ["Łazienki", "Kuchnia", "Pranie", "Podłogi"]
 
     # startowy poniedziałek (3 listopada 2025)
     start_date = date(2025, 11, 3)
-    start_week_idx = 0
 
     def week_index_for_date(d: date):
         return (d - start_date).days // 7
@@ -120,14 +151,18 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 8):
     for w in range(weeks_ahead):
         week_monday = monday_this_week + timedelta(weeks=w)
         week_idx = current_week_idx + w
-        # rotacja co tydzień
         for i, child in enumerate(children):
-            task = base_tasks[(i + week_idx) % len(base_tasks)]
+            # rotacja: przesuwamy zadania o week_idx
+            task_display = base_tasks_display[(i + week_idx) % len(base_tasks_display)]
             for day in range(7):
                 d = (week_monday + timedelta(days=day)).isoformat()
-                inserts.append((child, d, task))
+                inserts.append((child, d, task_display))
 
-    # usuń duplikaty
+    # filtrowanie istniejących rekordów (nie nadpisujemy done/photo)
+    if not inserts:
+        conn.close()
+        return
+
     min_date = min(i[1] for i in inserts)
     max_date = max(i[1] for i in inserts)
     cur.execute(
@@ -136,11 +171,11 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 8):
     )
     existing = set(cur.fetchall())
 
-    filtered_inserts = [
-        (child, d, task)
-        for child, d, task in inserts
-        if (d, child, task) not in existing
-    ]
+    filtered_inserts = []
+    for child, d, task in inserts:
+        key = (d, child, task)
+        if key not in existing:
+            filtered_inserts.append((child, d, task))
 
     if filtered_inserts:
         cur.executemany(
@@ -150,6 +185,33 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 8):
         conn.commit()
 
     conn.close()
+
+# --- funkcja która wymusza przypisanie zadań dla konkretnego tygodnia ---
+def assign_week_tasks(week_monday: date, mapping: dict, conn=None):
+    """
+    mapping: dict child -> task_display (np. {"Kamil":"Łazienki", ...})
+    Ustawia/aktualizuje wpisy w bazie dla dni od week_monday do week_monday+6.
+    """
+    close_conn = False
+    if conn is None:
+        conn = sqlite3.connect(str(db_path))
+        close_conn = True
+    cur = conn.cursor()
+    dates = [(week_monday + timedelta(days=d)).isoformat() for d in range(7)]
+    for child, task in mapping.items():
+        task_can = canonical_task_name(task)
+        for d in dates:
+            # jeśli istnieje wpis dla child+date -> update dyzor
+            cur.execute("SELECT id FROM DyzuryDomowe WHERE TRIM(dziecko)=? AND data=?", (child, d))
+            r = cur.fetchone()
+            if r:
+                cur.execute("UPDATE DyzuryDomowe SET dyzor=? WHERE id=?", (task_can, r[0]))
+            else:
+                cur.execute("INSERT INTO DyzuryDomowe (dziecko, data, dyzor) VALUES (?, ?, ?)", (child, d, task_can))
+    conn.commit()
+    if close_conn:
+        conn.close()
+
 
 # reseed control (set False after first run)
 # reseed control (set False after first run)
@@ -239,6 +301,27 @@ if display_names:
                     monday = week_monday(today_date)
                     week_dates = [(monday + timedelta(days=i)) for i in range(7)]
                     week_strs = [d.isoformat() for d in week_dates]
+
+                    # --- PRZYCISK NAPRAWCZY: ustaw ręcznie aktualny tydzień ---
+                    repair_col1, repair_col2 = st.columns([3,1])
+                    with repair_col1:
+                        st.write("")  # miejsce na opis jeśli chcesz
+                    with repair_col2:
+                        if st.button("Ustaw ten tydzień (Ania = Kuchnia)", key="fix_this_week"):
+                            # mapping jaki chcesz na ten tydzień:
+                            fix_map = {
+                                "Kamil": "Łazienki",
+                                "Ania": "Kuchnia",
+                                "Dominik": "Pranie",
+                                "Mateusz": "Podłogi",
+                            }
+                            try:
+                                assign_week_tasks(monday, fix_map, conn=conn)
+                                st.success("Tydzień został ustawiony: Ania = Kuchnia itd.")
+                                safe_rerun()
+                            except Exception as e:
+                                st.error(f"Błąd podczas ustawiania tygodnia: {e}")
+
 
                     st.markdown(f"**Tydzień:** {monday.isoformat()} — {(monday + timedelta(days=6)).isoformat()}")
 
