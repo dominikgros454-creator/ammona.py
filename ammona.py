@@ -234,6 +234,89 @@ if display_names:
                     st.markdown("### ")
                     st.success("Panel rodzica odblokowany")
                     st.info("Tu w przyszłości dodasz ustawienia i statystyki.")
+                    # --- Panel rodzica: widok tygodniowy + regeneracja ---
+                    # --- Panel rodzica: widok tygodniowy + regeneracja ---
+                    from datetime import date, timedelta
+
+                    # helper: zwraca poniedziałek dla daty
+                    def week_monday(d: date) -> date:
+                        return d - timedelta(days=d.weekday())
+
+                    today_date = date.today()
+                    monday = week_monday(today_date)
+                    week_dates = [(monday + timedelta(days=i)) for i in range(7)]
+                    week_strs = [d.isoformat() for d in week_dates]
+
+                    st.markdown(f"**Tydzień:** {monday.isoformat()} — {(monday + timedelta(days=6)).isoformat()}")
+
+                    # pobierz wszystkie dyżury dla tego tygodnia i posortuj po dziecku i dacie
+                    cur.execute(
+                        "SELECT id, dziecko, data, dyzor, COALESCE(done,0), COALESCE(photo,'') "
+                        "FROM DyzuryDomowe WHERE data BETWEEN ? AND ? ORDER BY LOWER(TRIM(dziecko)), data, id",
+                        (week_strs[0], week_strs[-1])
+                    )
+                    week_rows = cur.fetchall()
+
+if not week_rows:
+    st.info("Brak wpisów dla tego tygodnia w bazie.")
+else:
+    # grupuj po dziecku w kolejności zadeklarowanej (Kamil, Ania, Dominik, Mateusz)
+    order = ["Kamil", "Ania", "Dominik", "Mateusz"]
+    by_child = {name: [] for name in order}
+    other = {}
+    for rid, child, d_str, task, done, photo in week_rows:
+        key = (child or "").strip()
+        if key in by_child:
+            by_child[key].append({"id": rid, "date": d_str, "task": task, "done": bool(done), "photo": photo})
+        else:
+            other.setdefault(key or "Inni", []).append({"id": rid, "date": d_str, "task": task, "done": bool(done), "photo": photo})
+
+    # wyświetl w ustalonej kolejności
+    for child in order:
+        tasks = by_child.get(child, [])
+        st.markdown(f"#### {child} — {len(tasks)} wpisów")
+        if not tasks:
+            st.info("Brak dyżurów dla tego dziecka w tym tygodniu.")
+        else:
+            for t in tasks:
+                status = "✅" if t["done"] else "❌"
+                st.write(f"{status} **{t['date']}** — {t['task']}  (id:{t['id']})")
+                if t["photo"]:
+                    p = Path(t["photo"])
+                    if p.exists():
+                        st.image(str(p), width=160)
+        st.markdown("---")
+
+    # pokaż też dzieci nietypowe
+    for other_name, tasks in other.items():
+        st.markdown(f"#### {other_name}")
+        for t in tasks:
+            status = "✅" if t["done"] else "❌"
+            st.write(f"{status} **{t['date']}** — {t['task']}  (id:{t['id']})")
+        st.markdown("---")
+
+    # Dodatkowo: przycisk do regeneracji / dopisania kolejnych tygodni (cron replacement)
+    st.markdown("### Administracja planem")
+    col_a, col_b = st.columns([3,1])
+    with col_a:
+        weeks_add = st.number_input("Dopisz tygodni (do przodu)", min_value=1, max_value=52, value=4, step=1, key="regen_weeks")
+    with col_b:
+        if st.button("Dopisz teraz", key="regen_now"):
+            try:
+                create_db_and_samples(db_path, weeks_ahead=int(st.session_state.get("regen_weeks", 4)))
+                st.success("Plan został zaktualizowany (dopisane brakujące wpisy).")
+                safe_rerun()
+            except Exception as e:
+                st.error(f"Błąd podczas dopisywania: {e}")
+
+    # Mały debug: ile wpisów w tym tygodniu i najdalsza data w DB
+    cur.execute("SELECT COUNT(1) FROM DyzuryDomowe WHERE data BETWEEN ? AND ?", (week_strs[0], week_strs[-1]))
+    cnt_week = cur.fetchone()[0]
+    cur.execute("SELECT MAX(data) FROM DyzuryDomowe")
+    max_date = cur.fetchone()[0]
+    st.caption(f"Liczba wpisów w tym tygodniu: {cnt_week} · Najdalsza data w DB: {max_date}")
+    # --- koniec panelu rodzica tygodniowego ---
+
                     # <-- wklej poniżej tej linii
                     # Panel rodzica — lista dyżurów na dziś (statusy dzieci)
                     from datetime import date
