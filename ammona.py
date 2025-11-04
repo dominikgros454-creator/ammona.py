@@ -343,28 +343,6 @@ if display_names:
                                                       st.image(str(p), width=160)
 
 
-                    # Dodatkowo: przycisk do regeneracji / dopisania kolejnych tygodni (cron replacement)
-                    st.markdown("### Administracja planem")
-                    col_a, col_b = st.columns([3,1])
-                    with col_a:
-                        weeks_add = st.number_input("Dopisz tygodni (do przodu)", min_value=1, max_value=52, value=4, step=1, key="regen_weeks")
-                    with col_b:
-                        if st.button("Dopisz teraz", key="regen_now"):
-                            try:
-                                create_db_and_samples(db_path, weeks_ahead=int(st.session_state.get("regen_weeks", 4)))
-                                st.success("Plan został zaktualizowany (dopisane brakujące wpisy).")
-                                safe_rerun()
-                            except Exception as e:
-                                st.error(f"Błąd podczas dopisywania: {e}")
-
-                    # Mały debug: ile wpisów w tym tygodniu i najdalsza data w DB
-                    cur.execute("SELECT COUNT(1) FROM DyzuryDomowe WHERE data BETWEEN ? AND ?", (week_strs[0], week_strs[-1]))
-                    cnt_week = cur.fetchone()[0]
-                    cur.execute("SELECT MAX(data) FROM DyzuryDomowe")
-                    max_date = cur.fetchone()[0]
-                    st.caption(f"Liczba wpisów w tym tygodniu: {cnt_week} · Najdalsza data w DB: {max_date}")
-                    # --- koniec panelu rodzica tygodniowego ---
-
                     # <-- wklej poniżej tej linii
                     # Panel rodzica — lista dyżurów na dziś (statusy dzieci)
                     from datetime import date
