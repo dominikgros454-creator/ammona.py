@@ -135,9 +135,28 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 4):
                 inserts.append((child, this_date.isoformat(), task))
 
 
-    cur.executemany("INSERT INTO DyzuryDomowe (dziecko, data, dyzor) VALUES (?, ?, ?)", inserts)
-    conn.commit()
-    conn.close()
+        # filtruj duplikaty — dodajemy tylko te wpisy, których jeszcze nie ma
+    if inserts:
+        min_date = min(i[1] for i in inserts)
+        max_date = max(i[1] for i in inserts)
+        cur.execute(
+            "SELECT data, dziecko, dyzor FROM DyzuryDomowe WHERE data BETWEEN ? AND ?",
+            (min_date, max_date),
+        )
+        existing = set(cur.fetchall())  # tuples (data, dziecko, dyzor)
+
+        filtered_inserts = []
+        for child, d_str, task in inserts:
+            key = (d_str, child, task)
+            if key not in existing:
+                filtered_inserts.append((child, d_str, task))
+
+        if filtered_inserts:
+            cur.executemany(
+                "INSERT INTO DyzuryDomowe (dziecko, data, dyzor) VALUES (?, ?, ?)",
+                filtered_inserts,
+            )
+            conn.commit()
 
 # reseed control (set False after first run)
 # reseed control (set False after first run)
