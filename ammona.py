@@ -86,8 +86,7 @@ def render_expander_uploader(rid: int, cur, conn):
 
     return saved, saved_path
 
-# create DB and sample data
-def create_db_and_samples(path: Path, weeks_ahead: int = 4):
+def create_db_and_samples(path: Path, weeks_ahead: int = 8):
     conn = sqlite3.connect(str(path))
     cur = conn.cursor()
     cur.execute("""
@@ -102,61 +101,55 @@ def create_db_and_samples(path: Path, weeks_ahead: int = 4):
     """)
     conn.commit()
 
-    cur.execute("SELECT COUNT(1) FROM DyzuryDomowe")
-    if cur.fetchone()[0] > 0:
-        conn.close()
-        return
+    # --- dane bazowe ---
+    children = ["Kamil", "Ania", "Dominik", "Mateusz"]
+    base_tasks = ["Lazienki", "Kuchnia", "Pranie", "Podlogi"]
 
-        # --- nowe: deterministyczna rotacja tygodniowa (1 zadanie na dziecko na cały tydzień) ---
-        # === prosty tygodniowy rozkład: 1 dyżur (7 dni) na dziecko, rotacja co tydzień ===
-        children = ["Kamil", "Ania", "Dominik", "Mateusz"]
-        task_cycle = ["Kuchnia", "Podlogi", "Pranie", "Lazienki"]
+    # startowy poniedziałek (3 listopada 2025)
+    start_date = date(2025, 11, 3)
+    start_week_idx = 0
 
-        today = date.today()
-        # poniedziałek bieżącego tygodnia
-        monday_this_week = today - timedelta(days=today.weekday())
+    def week_index_for_date(d: date):
+        return (d - start_date).days // 7
 
-        # numer tygodnia względem stałej epoki (poniedziałek) — deterministyczna rotacja
-        def week_index_for_date(d: date, epoch: date = date(2020,1,6)):
-            return (d - epoch).days // 7
+    today = date.today()
+    monday_this_week = today - timedelta(days=today.weekday())
+    current_week_idx = week_index_for_date(monday_this_week)
 
-        start_week_idx = week_index_for_date(monday_this_week)
+    inserts = []
+    for w in range(weeks_ahead):
+        week_monday = monday_this_week + timedelta(weeks=w)
+        week_idx = current_week_idx + w
+        # rotacja co tydzień
+        for i, child in enumerate(children):
+            task = base_tasks[(i + week_idx) % len(base_tasks)]
+            for day in range(7):
+                d = (week_monday + timedelta(days=day)).isoformat()
+                inserts.append((child, d, task))
 
-        inserts = []
-        for w in range(weeks_ahead):
-            this_week_idx = start_week_idx + w
-            week_monday = monday_this_week + timedelta(weeks=w)
-            # każdy child ma jedno zadanie na cały tydzień
-            for base_idx, child in enumerate(children):
-                task = task_cycle[(base_idx + this_week_idx) % len(task_cycle)]
-                for weekday in range(7):
-                    d = (week_monday + timedelta(days=weekday)).isoformat()
-                    inserts.append((child, d, task))
+    # usuń duplikaty
+    min_date = min(i[1] for i in inserts)
+    max_date = max(i[1] for i in inserts)
+    cur.execute(
+        "SELECT data, dziecko, dyzor FROM DyzuryDomowe WHERE data BETWEEN ? AND ?",
+        (min_date, max_date),
+    )
+    existing = set(cur.fetchall())
 
+    filtered_inserts = [
+        (child, d, task)
+        for child, d, task in inserts
+        if (d, child, task) not in existing
+    ]
 
-
-        # filtruj duplikaty — dodajemy tylko te wpisy, których jeszcze nie ma
-    if inserts:
-        min_date = min(i[1] for i in inserts)
-        max_date = max(i[1] for i in inserts)
-        cur.execute(
-            "SELECT data, dziecko, dyzor FROM DyzuryDomowe WHERE data BETWEEN ? AND ?",
-            (min_date, max_date),
+    if filtered_inserts:
+        cur.executemany(
+            "INSERT INTO DyzuryDomowe (dziecko, data, dyzor) VALUES (?, ?, ?)",
+            filtered_inserts,
         )
-        existing = set(cur.fetchall())  # tuples (data, dziecko, dyzor)
+        conn.commit()
 
-        filtered_inserts = []
-        for child, d_str, task in inserts:
-            key = (d_str, child, task)
-            if key not in existing:
-                filtered_inserts.append((child, d_str, task))
-
-        if filtered_inserts:
-            cur.executemany(
-                "INSERT INTO DyzuryDomowe (dziecko, data, dyzor) VALUES (?, ?, ?)",
-                filtered_inserts,
-            )
-            conn.commit()
+    conn.close()
 
 # reseed control (set False after first run)
 # reseed control (set False after first run)
