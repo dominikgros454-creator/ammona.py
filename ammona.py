@@ -291,9 +291,32 @@ if display_names:
                         for other_name, tasks in other.items():
                             st.markdown(f"#### {other_name}")
                             for t in tasks:
-                                status = "✅" if t["done"] else "❌"
-                                st.write(f"{status} **{t['date']}** — {t['task']}  (id:{t['id']})")
-                            st.markdown("---")
+                                          # Konsoliduj zadania: chcemy 1 dyżur (7 dni) na dziecko
+                                          if not tasks:
+                                              st.info("Brak dyżurów dla tego dziecka w tym tygodniu.")
+                                          else:
+                                              # zbierz liczniki zadań
+                                              from collections import Counter
+                                              task_names = [t["task"] for t in tasks]
+                                              cnt = Counter(task_names)
+                                              # wybierz najczęściej występujące zadanie (deterministycznie: tie -> alfabetycznie)
+                                              most_common = sorted(cnt.items(), key=lambda x: (-x[1], x[0]))[0][0]
+                                              # zakres daty tygodnia (pokazujemy tydzień jako poniedziałek-niedziela)
+                                              dates = sorted({t["date"] for t in tasks})
+                                              week_from = dates[0] if dates else ""
+                                              week_to = dates[-1] if dates else ""
+                                              # jeśli są sprzeczne wpisy (różne zadania) pokaż ostrzeżenie
+                                              if len(cnt) > 1:
+                                                  st.warning(f"Uwaga: wykryto różne zadania dla {child} w tym tygodniu. Pokazano zadanie najczęstsze: **{most_common}**")
+                                              status = "✅" if any(t["done"] for t in tasks) else "❌"
+                                              st.write(f"{status} **{week_from} — {week_to}** — **{most_common}**  (liczba wpisów: {len(tasks)})")
+                                              # pokaż ewentualne zdjęcie pierwsze dostępne
+                                              first_photo = next((t["photo"] for t in tasks if t.get("photo")), None)
+                                              if first_photo:
+                                                  p = Path(first_photo)
+                                                  if p.exists():
+                                                      st.image(str(p), width=160)
+
 
                     # Dodatkowo: przycisk do regeneracji / dopisania kolejnych tygodni (cron replacement)
                     st.markdown("### Administracja planem")
