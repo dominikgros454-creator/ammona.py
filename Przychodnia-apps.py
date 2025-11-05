@@ -33,7 +33,7 @@ DB_PATH  = os.path.join(BASE_DIR, Config.DB_FILE)
 DB_PATH = r"C:\Users\jacek\Desktop\przychodniaapp\przychodnia.db"
 print("DEBUG [przychodnia_apps] DB_PATH =", DB_PATH)
 
-# na samej gÃ³rze pliku
+# na samej górze pliku
 if 'selected_wizyta' not in st.session_state:
     st.session_state.selected_wizyta = None
 
@@ -68,7 +68,7 @@ def init_db():
     if "Active" not in cols:
         c.execute("ALTER TABLE Pacjenci ADD COLUMN Active INTEGER DEFAULT 1")
 
-        # Opcjonalnie: to samo dla Lekarze, jeÅli chcesz soft-delete teÅ¼ lekarzy
+        # Opcjonalnie: to samo dla Lekarze, jeśli chcesz soft-delete też lekarzy
     c.execute("PRAGMA table_info(Lekarze)")
     cols = [row[1] for row in c.fetchall()]
     if "Active" not in cols:
@@ -95,8 +95,8 @@ conn = sqlite3.connect(Config.DB_FILE)
 
 st.set_page_config(page_title="Przychodnia", layout="wide")
 
-# --- 2ï¸â£ Inicjalizacja menu w state ---------------------
-# 1ï¸â£ Menu na samej gÃ³rze (biaÅy header)
+# --- 2️⃣ Inicjalizacja menu w state ---------------------
+# 1️⃣ Menu na samej górze (biały header)
 import streamlit as st
 
 # Ustawienie query params na starcie
@@ -118,17 +118,17 @@ def wyslij_sms(numer, tresc):
         from_=Config.TWILIO_NUMBER,
         to=numer
     )
-    st.success(f"SMS wysÅany do {numer}")
+    st.success(f"SMS wysłany do {numer}")
 
 def wyslij_sms_potwierdzenie(pacjent_id, data_str, godzina, conn):
-    # 1) Budujemy treÅÄ SMS-a
-    tresc = f"Twoja wizyta zostaÅa zaplanowana na {data_str} o godz. {godzina}."
+    # 1) Budujemy treść SMS-a
+    tresc = f"Twoja wizyta została zaplanowana na {data_str} o godz. {godzina}."
 
     try:
-        # 2) WywoÅanie API bramki SMS (przykÅad)
+        # 2) Wywołanie API bramki SMS (przykład)
         wyslij_do_bramki(numer, tresc)
     except Exception as e:
-        st.warning(f"(TEST) SMS nie zostaÅ wysÅany: {tresc}")
+        st.warning(f"(TEST) SMS nie został wysłany: {tresc}")
 
 
 def wyslij_przypomnienie():
@@ -145,7 +145,7 @@ def wyslij_przypomnienie():
                 pacjent = c.fetchone()
                 if pacjent:
                     telefon = pacjent[0]
-                    tresc = f"â° Przypomnienie: Twoja wizyta o {godzina} dnia {data}. Prosimy o punktualnoÅÄ!"
+                    tresc = f"⏰ Przypomnienie: Twoja wizyta o {godzina} dnia {data}. Prosimy o punktualność!"
                     wyslij_sms(telefon, tresc)
                     c.execute("UPDATE Wizyty SET PrzypomnienieWyslane=1 WHERE ID=?", (id_wizyty,))
                     conn_local.commit()
@@ -153,7 +153,7 @@ def wyslij_przypomnienie():
 def przypomnienia_loop():
     while True:
         wyslij_przypomnienie()
-        time.sleep(60)  # sprawdzaj co minutÄ
+        time.sleep(60)  # sprawdzaj co minutę
 
 import sqlite3
 from datetime import datetime, timedelta
@@ -162,11 +162,11 @@ DB_PATH = r"C:\Users\jacek\Desktop\przychodniaapp\przychodnia.db"
 
 def rezerwacja_prosta(imie_nazwisko, doktor, data, godzina, opis=""):
     """
-    Szuka pacjenta i lekarza, sprawdza dostÄpne sloty,
-    a jeÅli siÄ zgadza - rezerwuje wizytÄ.
-    Zwraca True jeÅli zarezerwowano pomyÅlnie,
-    ValueError w razie bÅÄdu (nieistniejÄcy pacjent/lekarz,
-    brak godzin pracy, zajÄty termin itp.).
+    Szuka pacjenta i lekarza, sprawdza dostępne sloty,
+    a jeśli się zgadza - rezerwuje wizytę.
+    Zwraca True jeśli zarezerwowano pomyślnie,
+    ValueError w razie błędu (nieistniejący pacjent/lekarz,
+    brak godzin pracy, zajęty termin itp.).
     """
     import sqlite3
     from datetime import datetime, timedelta
@@ -183,20 +183,20 @@ def rezerwacja_prosta(imie_nazwisko, doktor, data, godzina, opis=""):
     # 2) Rozbij imiona i nazwiska
     pac_parts = imie_nazwisko.strip().split(maxsplit=1)
     if len(pac_parts) < 2:
-        raise ValueError("Niepoprawne imiÄ i nazwisko pacjenta")
+        raise ValueError("Niepoprawne imię i nazwisko pacjenta")
     pac_imie, pac_nazwisko = pac_parts
 
     doc_parts = doktor.strip().split(maxsplit=1)
     if len(doc_parts) < 2:
-        raise ValueError("Niepoprawne imiÄ i nazwisko lekarza")
+        raise ValueError("Niepoprawne imię i nazwisko lekarza")
     dok_imie, dok_nazwisko = doc_parts
 
-    # 3) PoÅÄcz z bazÄ
+    # 3) Połącz z bazą
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # DEBUG krok 2: wypisz wszystkie unikalne wartoÅci DzienTygodnia
+    # DEBUG krok 2: wypisz wszystkie unikalne wartości DzienTygodnia
     c.execute("SELECT DISTINCT DzienTygodnia FROM GodzinyPracyLekarzy")
-    print("DEBUG â dostÄpne DzienTygodnia w tabeli:", c.fetchall())
+    print("DEBUG – dostępne DzienTygodnia w tabeli:", c.fetchall())
 
     # 4) Szukaj pacjenta
     c.execute(
@@ -224,10 +224,10 @@ def rezerwacja_prosta(imie_nazwisko, doktor, data, godzina, opis=""):
     if not duration:
         duration = 30
 
-    # 6) Ustal dzieÅ tygodnia
+    # 6) Ustal dzień tygodnia
     weekdays = {
-        0: "PoniedziaÅek", 1: "Wtorek", 2: "Åroda",
-        3: "Czwartek",   4: "PiÄtek",  5: "Sobota",
+        0: "Poniedziałek", 1: "Wtorek", 2: "Środa",
+        3: "Czwartek",   4: "Piątek",  5: "Sobota",
         6: "Niedziela"
     }
     date_obj = datetime.strptime(data, "%Y-%m-%d").date()
@@ -241,16 +241,16 @@ def rezerwacja_prosta(imie_nazwisko, doktor, data, godzina, opis=""):
     )
     work_periods = c.fetchall()
 
-    # DEBUG: peÅna tabela dla lekarza
+    # DEBUG: pełna tabela dla lekarza
     c.execute(
         "SELECT DzienTygodnia, GodzinaOd, GodzinaDo "
         "FROM GodzinyPracyLekarzy WHERE LekarzID=?",
         (blob_lekarz_id,)
     )
-    print(f"DEBUG: peÅna tabela GodzinyPracyLekarzy dla {doktor}:", c.fetchall())
+    print(f"DEBUG: pełna tabela GodzinyPracyLekarzy dla {doktor}:", c.fetchall())
 
-    print(f"DEBUG: peÅna tabela GodzinyPracyLekarzy dla {doktor}:", c.fetchall())
-    # ââââââââââââââââââââââ
+    print(f"DEBUG: pełna tabela GodzinyPracyLekarzy dla {doktor}:", c.fetchall())
+    # ——————————————————————
 
     if not work_periods:
         conn.close()
@@ -258,15 +258,15 @@ def rezerwacja_prosta(imie_nazwisko, doktor, data, godzina, opis=""):
             f"Brak godzin pracy dla {doktor} w dniu {dzien}"
         )
 
-    # 8) Pobierz zajÄte godziny
+    # 8) Pobierz zajęte godziny
     c.execute(
         "SELECT Godzina FROM Wizyty WHERE LekarzID=? AND Data=? "
-        "AND Status!='OdwoÅana'",
+        "AND Status!='Odwołana'",
         (lekarz_id, data)
     )
     occupied = {r[0] for r in c.fetchall()}
 
-    # 9) Wygeneruj listÄ wolnych slotÃ³w
+    # 9) Wygeneruj listę wolnych slotów
     wolne = []
     for godz_od, godz_do in work_periods:
         start = datetime.strptime(godz_od, "%H:%M")
@@ -281,9 +281,9 @@ def rezerwacja_prosta(imie_nazwisko, doktor, data, godzina, opis=""):
 
     if godzina not in wolne:
         conn.close()
-        raise ValueError(f"Termin {data} {godzina} niedostÄpny")
+        raise ValueError(f"Termin {data} {godzina} niedostępny")
 
-    # 10) Zapisz wizytÄ
+    # 10) Zapisz wizytę
     c.execute(
         "INSERT INTO Wizyty "
         "(PacjentID, LekarzID, Data, Godzina, Opis, Status, Zrodlo) "
@@ -318,7 +318,7 @@ header, .stDeployButton, .viewerBadge_link__1S137,
   left: 0;
   right: 0;
   z-index: 1000;
-  height: 48px;  /* ð¡ kompaktowa belka */
+  height: 48px;  /* 💡 kompaktowa belka */
   box-shadow: 0 1px 5px rgba(0,0,0,0.1);
 }}
 
@@ -440,19 +440,19 @@ p, div, h1, h2, h3, h4, h5, h6, span {{
 
 st.markdown(menu_html, unsafe_allow_html=True)
 
-# PrzykÅad wyÅwietlenia zawartoÅci zakÅadki
+# Przykład wyświetlenia zawartości zakładki
 if menu == "start":
-    st.title("Panel gÅÃ³wny")
+    st.title("Panel główny")
 elif menu == "rezerwacja":
-    st.title("ð Rezerwacja wizyty")
+    st.title("📅 Rezerwacja wizyty")
 elif menu == "wizyty":
-    st.title("ð Lista wizyt")
+    st.title("📖 Lista wizyt")
 elif menu == "przypomnienia":
-    st.title("â° Przypomnienia SMS")
+    st.title("⏰ Przypomnienia SMS")
 elif menu == "pacjenci":
-    st.title("ð¤ Pacjenci")
+    st.title("👤 Pacjenci")
 elif menu == "ustawienia":
-    st.title("âï¸ Ustawienia systemu")
+    st.title("⚙️ Ustawienia systemu")
 
 
 
@@ -464,7 +464,7 @@ if menu == "start":
         "SELECT COUNT(*) AS cnt FROM Wizyty WHERE Status='Anulowana'", conn
     )["cnt"][0]
 
-    # 2) zaciÄgamy zaplanowane + czas wizyty lekarza
+    # 2) zaciągamy zaplanowane + czas wizyty lekarza
     wizyty_plan = pd.read_sql("""
         SELECT W.Data, W.Godzina, L.Czas_Wizyty
         FROM Wizyty W
@@ -484,25 +484,25 @@ if menu == "start":
 
     teraz = datetime.now()
 
-    # 4) dynamiczne zakoÅczone i w trakcie
-    zakoÅczone_din = wizyty_plan[wizyty_plan["end_dt"] <= teraz].shape[0]
+    # 4) dynamiczne zakończone i w trakcie
+    zakończone_din = wizyty_plan[wizyty_plan["end_dt"] <= teraz].shape[0]
     w_trakcie      = wizyty_plan[
                         (wizyty_plan["start_dt"] <= teraz) &
                         (wizyty_plan["end_dt"]   >  teraz)
                      ].shape[0]
 
-    # 5) dodaj historyczne zakoÅczone z bazy
+    # 5) dodaj historyczne zakończone z bazy
     z_kbazy = pd.read_sql(
-        "SELECT COUNT(*) AS cnt FROM Wizyty WHERE Status='ZakoÅczona'", conn
+        "SELECT COUNT(*) AS cnt FROM Wizyty WHERE Status='Zakończona'", conn
     )["cnt"][0]
-    zakoÅczone = z_kbazy + zakoÅczone_din
+    zakończone = z_kbazy + zakończone_din
 
     def skala(v):
         import math
-        MAX_WYSOKOSC = 280  # np. 280px maksymalnej wysokoÅci sÅupka
-        MAX_LOG = math.log(1 + 100)  # zakÅadamy Å¼e 100 wizyt to âgÃ³rna granicaâ
+        MAX_WYSOKOSC = 280  # np. 280px maksymalnej wysokości słupka
+        MAX_LOG = math.log(1 + 100)  # zakładamy że 100 wizyt to „górna granica”
 
-    # logarytmiczna skala spowalniajÄca wzrost sÅupka
+    # logarytmiczna skala spowalniająca wzrost słupka
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
     with col1:
@@ -517,7 +517,7 @@ if menu == "start":
           border: 1px solid #fffffff;
           border-radius: 8px;
           position: relative;
-          box-shadow: 0 0 12px rgba(0, 0, 0, 0.2); /* Åagodny cieÅ */
+          box-shadow: 0 0 12px rgba(0, 0, 0, 0.2); /* łagodny cień */
         }}
         .bar-item {{ text-align:center;}}
         .bar-value {{ font-weight:bold; margin-bottom:6px; }}
@@ -553,9 +553,9 @@ if menu == "start":
           <div class="bar-container">
           <div class="bar-title">Wizyty:</div>
           <div class="bar-item">
-            <div class="bar-value">{zakoÅczone}</div>
-            <div class="bar" style="height: {skala(zakoÅczone)}px;"></div>
-            <div class="bar-label">ZakoÅczone</div>
+            <div class="bar-value">{zakończone}</div>
+            <div class="bar" style="height: {skala(zakończone)}px;"></div>
+            <div class="bar-label">Zakończone</div>
           </div>
           <div class="bar-item">
             <div class="bar-value">{w_trakcie}</div>
@@ -574,7 +574,7 @@ if menu == "start":
     with col2:
         st.markdown("""
         <div style="margin-left: 40px; font-size: 13px; font-weight: 600; max-width: 300px; margin: 0 0 12px 40px;">
-          NajbliÅ¼sze wizyty:
+          Najbliższe wizyty:
         </div>
         """, unsafe_allow_html=True)
 
@@ -620,7 +620,7 @@ if menu == "start":
               """, unsafe_allow_html=True)
 
     with col_mid:
-        liczba_wiadomosci = 8  # <- zastÄp dynamicznÄ wartoÅciÄ z bazy jeÅli chcesz
+        liczba_wiadomosci = 8  # <- zastąp dynamiczną wartością z bazy jeśli chcesz
 
         st.markdown(f"""
         <div style="
@@ -637,7 +637,7 @@ if menu == "start":
             background: white;
         ">
           <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;">
-            WysÅane wiadomoÅci
+            Wysłane wiadomości
           </div>
           <div style="font-size: 36px; font-weight: bold;">
             {liczba_wiadomosci}
@@ -649,7 +649,7 @@ elif menu == "rezerwacja":
     st.header("Rezerwacja wizyty")
 
     st.checkbox(
-        "ð Blokuj wysyÅkÄ SMS (tryb testowy)",
+        "🔒 Blokuj wysyłkę SMS (tryb testowy)",
         key="blokuj_sms",
         value=True
     )
@@ -662,7 +662,7 @@ elif menu == "rezerwacja":
         conn
 )
     if pacjenci_df.empty or lekarze_df.empty:
-        st.warning("Musisz mieÄ przynajmniej jednego pacjenta i lekarza w bazie.")
+        st.warning("Musisz mieć przynajmniej jednego pacjenta i lekarza w bazie.")
     else:
         pacjent_options = (pacjenci_df["Imie"] + " " + pacjenci_df["Nazwisko"]).tolist()
         lekarz_options = (lekarze_df["Imie"] + " " + lekarze_df["Nazwisko"]).tolist()
@@ -681,11 +681,11 @@ elif menu == "rezerwacja":
 
         # Zamiana angielskiego dnia na polski
         dni_ang_pl = {
-            'Monday': 'PoniedziaÅek',
+            'Monday': 'Poniedziałek',
             'Tuesday': 'Wtorek',
-            'Wednesday': 'Åroda',
+            'Wednesday': 'Środa',
             'Thursday': 'Czwartek',
-            'Friday': 'PiÄtek',
+            'Friday': 'Piątek',
             'Saturday': 'Sobota',
             'Sunday': 'Niedziela'
         }
@@ -719,24 +719,24 @@ elif menu == "rezerwacja":
                 current_time += timedelta(minutes=czas_wizyty)
 
             if available_times:
-                godzina_input = st.selectbox("DostÄpne godziny", available_times)
+                godzina_input = st.selectbox("Dostępne godziny", available_times)
             else:
-                godzina_input = st.text_input("Brak wolnych terminÃ³w â wpisz rÄcznie (HH:MM)")
+                godzina_input = st.text_input("Brak wolnych terminów — wpisz ręcznie (HH:MM)")
 
             opis_input = st.text_area("Opis wizyty (opcjonalny)")
 
-        if st.button("Rezerwuj wizytÄ"):
+        if st.button("Rezerwuj wizytę"):
             try:
                 datetime.strptime(godzina_input, "%H:%M")
             except ValueError:
-                st.error("Wpisz poprawnÄ godzinÄ w formacie HH:MM")
+                st.error("Wpisz poprawną godzinę w formacie HH:MM")
                 st.stop()
 
             if godzina_input in zajete_godziny:
-                st.error("â Ten termin jest juÅ¼ zajÄty. Wybierz innÄ godzinÄ.")
+                st.error("❌ Ten termin jest już zajęty. Wybierz inną godzinę.")
                 st.stop()
 
-         # 1) Konwertujemy datÄ na string YYYY-MM-DD
+         # 1) Konwertujemy datę na string YYYY-MM-DD
             data_str = data_input.strftime("%Y-%m-%d")
 
             service = get_calendar_service()
@@ -745,9 +745,9 @@ elif menu == "rezerwacja":
                 (lekarze_df["Imie"] + " " + lekarze_df["Nazwisko"]) == lekarz_selected
             ].iloc[0]
 
-         # 2) Tworzymy event w Google Calendar i przechwytujemy zwrotkÄ
+         # 2) Tworzymy event w Google Calendar i przechwytujemy zwrotkę
             event_body = {
-                'summary': f"Wizyta: {pacjent_selected} â {data_str} {godzina_input}",
+                'summary': f"Wizyta: {pacjent_selected} – {data_str} {godzina_input}",
                 'start': {'dateTime': f"{data_str}T{godzina_input}:00", 'timeZone': str(Config.TIMEZONE)},
                 'end':   {'dateTime': (datetime.strptime(f"{data_str} {godzina_input}", "%Y-%m-%d %H:%M")
                               + timedelta(minutes=czas_wizyty)).isoformat(),
@@ -758,7 +758,7 @@ elif menu == "rezerwacja":
                 body=event_body
             ).execute()
 
-            # 3) Teraz mamy data_str i event['id'], moÅ¼na INSERTowaÄ
+            # 3) Teraz mamy data_str i event['id'], można INSERTować
             pacjent_id = int(
                 pacjenci_df.loc[
                     (pacjenci_df["Imie"] + " " + pacjenci_df["Nazwisko"])
@@ -790,19 +790,19 @@ elif menu == "rezerwacja":
             conn.commit()
 
             wyslij_sms_potwierdzenie(pacjent_id, data_str, godzina_input, conn)
-            st.success("â Wizyta zarezerwowana.")
+            st.success("✅ Wizyta zarezerwowana.")
             st.session_state["menu"] = "wizyty"
             st.rerun()
 
 
 elif menu == "wizyty":
-    st.title("ð Lista wizyt")
+    st.title("📖 Lista wizyt")
 
-    # 0ï¸â£ Zainicjalizuj stan raz
+    # 0️⃣ Zainicjalizuj stan raz
     if "selected_wizyta" not in st.session_state:
         st.session_state.selected_wizyta = None
 
-    # 1ï¸â£ PokaÅ¼ tabelÄ z wizytami i ustaw stan przy klikniÄciu
+    # 1️⃣ Pokaż tabelę z wizytami i ustaw stan przy kliknięciu
     wizyty_df = pd.read_sql("""
         SELECT
             W.ID,
@@ -819,7 +819,7 @@ elif menu == "wizyty":
     """, conn)
 
     if wizyty_df.empty:
-        st.info("Brak wizyt do wyÅwietlenia.")
+        st.info("Brak wizyt do wyświetlenia.")
     else:
         for _, row in wizyty_df.iterrows():
             cols = st.columns([3,3,2,2,1])
@@ -839,11 +839,11 @@ elif menu == "wizyty":
             cols[1].write(row["Pacjent"])
             cols[2].write(row["Data"])
             cols[3].write(row["Godzina"])
-            if cols[4].button("SzczegÃ³Åy", key=f"szcz_{row['ID']}"):
+            if cols[4].button("Szczegóły", key=f"szcz_{row['ID']}"):
                 st.session_state.selected_wizyta = row["ID"]
 
 
-    # 2ï¸â£ Po rerunie, jeÅli coÅ wybrano, wyÅwietl szczegÃ³Åy
+    # 2️⃣ Po rerunie, jeśli coś wybrano, wyświetl szczegóły
     vid = st.session_state.selected_wizyta
     if vid is not None:
         detail_df = pd.read_sql(
@@ -871,7 +871,7 @@ elif menu == "wizyty":
             w = detail_df.iloc[0]
 
             st.markdown("---")
-            st.header("ð SzczegÃ³Åy wizyty")
+            st.header("🔍 Szczegóły wizyty")
 
             w = detail_df.iloc[0]
             badge = (
@@ -887,34 +887,34 @@ elif menu == "wizyty":
             st.write("**Data i godzina:**",   f"{w['Data']} {w['Godzina']}")
             st.write("**Status:**",           w["Status"])
             opis = w["Opis"]
-            st.write("**Opis wizyty:**", opis if opis and opis.strip() else "â")
+            st.write("**Opis wizyty:**", opis if opis and opis.strip() else "—")
 
 
-            # Przycisk ukrycia szczegÃ³ÅÃ³w resetuje stan
-            if st.button("â Ukryj szczegÃ³Åy"):
+            # Przycisk ukrycia szczegółów resetuje stan
+            if st.button("← Ukryj szczegóły"):
                 st.session_state.selected_wizyta = None
 
             # anulowanie
-            if w["Status"] != "Anulowana" and st.button("â Anuluj wizytÄ"):
+            if w["Status"] != "Anulowana" and st.button("❌ Anuluj wizytę"):
                 conn.execute(
                     "UPDATE Wizyty SET Status='Anulowana' WHERE ID=?", (vid,)
                 )
                 conn.commit()
-                st.success("Wizyta zostaÅa anulowana.")
+                st.success("Wizyta została anulowana.")
                 st.session_state.selected_wizyta = None
                 st.stop()
 
             # usuwanie (tylko gdy anulowana)
-            if w["Status"] == "Anulowana" and st.button("ðï¸ UsuÅ wizytÄ"):
+            if w["Status"] == "Anulowana" and st.button("🗑️ Usuń wizytę"):
                 conn.execute("DELETE FROM Wizyty WHERE ID=?", (vid,))
                 conn.commit()
-                st.success("Wizyta zostaÅa usuniÄta.")
+                st.success("Wizyta została usunięta.")
                 st.session_state.selected_wizyta = None
                 st.stop()
 
 
 elif menu == "przypomnienia":
-    st.header("Tabela przypomnieÅ")
+    st.header("Tabela przypomnień")
     przypomnienia_df = pd.read_sql("SELECT * FROM Wizyty WHERE PrzypomnienieWyslane=1", conn)
     st.dataframe(przypomnienia_df)
 
@@ -922,14 +922,14 @@ elif menu == "przypomnienia":
 elif menu == "pacjenci":
     st.title("Rejestracja pacjenta")
 
-    imie = st.text_input("ImiÄ")
+    imie = st.text_input("Imię")
     nazwisko = st.text_input("Nazwisko")
     pesel = st.text_input("PESEL")
     telefon = st.text_input("Telefon")
 
     if st.button("Zarejestruj pacjenta"):
         if not imie or not nazwisko or not pesel or not telefon:
-            st.error("WypeÅnij wszystkie pola!")
+            st.error("Wypełnij wszystkie pola!")
         else:
             c = conn.cursor()
             c.execute("INSERT INTO Pacjenci (Imie, Nazwisko, Telefon, PESEL) VALUES (?, ?, ?, ?)",
@@ -952,7 +952,7 @@ elif menu == "pacjenci":
         ]
 
     if df_pacjenci.empty:
-        st.info("Brak pacjentÃ³w do wyÅwietlenia.")
+        st.info("Brak pacjentów do wyświetlenia.")
     else:
         for _, row in df_pacjenci.iterrows():
             col1, col2, col3 = st.columns([4, 3, 3])
@@ -976,7 +976,7 @@ elif menu == "pacjent_szczegoly":
         st.error("Nie znaleziono pacjenta.")
         st.stop()
     pacjent = pacjent.iloc[0]
-    st.header(f"SzczegÃ³Åy: {pacjent['Imie']} {pacjent['Nazwisko']}")
+    st.header(f"Szczegóły: {pacjent['Imie']} {pacjent['Nazwisko']}")
 
     # Wizyty pacjenta
     wizyty = pd.read_sql("""
@@ -994,10 +994,10 @@ elif menu == "pacjent_szczegoly":
         st.dataframe(wizyty)
 
 
-    # PowrÃ³t do listy pacjentÃ³w
-    st.markdown(f"<a href='/?menu=pacjenci' target='_self'>â¬ï¸ PowrÃ³t</a>", unsafe_allow_html=True)
+    # Powrót do listy pacjentów
+    st.markdown(f"<a href='/?menu=pacjenci' target='_self'>⬅️ Powrót</a>", unsafe_allow_html=True)
 
-    st.header(f"SzczegÃ³Åy pacjenta: {pacjent['Imie']} {pacjent['Nazwisko']}")
+    st.header(f"Szczegóły pacjenta: {pacjent['Imie']} {pacjent['Nazwisko']}")
     st.write(f"Telefon: {pacjent['Telefon']}")
     st.write(f"PESEL: {pacjent['PESEL']}")
 
@@ -1044,14 +1044,14 @@ elif menu == "pacjent_szczegoly":
                 </div>
             """, unsafe_allow_html=True)
 
-    if st.button("ðï¸ UsuÅ pacjenta"):
+    if st.button("🗑️ Usuń pacjenta"):
         c = conn.cursor()
         conn.execute("UPDATE Pacjenci SET Active=0 WHERE ID=?", (pacjent_id,))
         conn.commit()
         st.success("Pacjent oznaczony jako nieaktywny.")
 
         conn.commit()
-        st.success("Pacjent zostaÅ usuniÄty.")
+        st.success("Pacjent został usunięty.")
         st.query_params(menu="pacjenci")
         st.rerun()
 
@@ -1060,13 +1060,13 @@ elif menu == "ustawienia":
     st.header("Ustawienia")
 
     st.checkbox(
-        "ð Blokuj wysyÅkÄ SMS (tryb testowy)",
+        "🔒 Blokuj wysyłkę SMS (tryb testowy)",
         key="blokuj_sms",
         value=False
     )
     # --- Dodaj lekarza ---
     with st.expander("Dodaj lekarza"):
-        imie_lekarza = st.text_input("ImiÄ lekarza", key="dodaj_imie")
+        imie_lekarza = st.text_input("Imię lekarza", key="dodaj_imie")
         nazwisko_lekarza = st.text_input("Nazwisko lekarza", key="dodaj_nazwisko")
         specjalizacja = st.text_input("Specjalizacja", key="dodaj_specjalizacja")
         czas_wizyty = st.number_input("Czas trwania wizyty (minuty)", min_value=5, max_value=180, value=30, key="dodaj_czas")
@@ -1074,7 +1074,7 @@ elif menu == "ustawienia":
 
         if st.button("Dodaj lekarza"):
             if not imie_lekarza or not nazwisko_lekarza or not specjalizacja or not kalendarz_id:
-                st.error("WypeÅnij wszystkie pola!")
+                st.error("Wypełnij wszystkie pola!")
             else:
                 c = conn.cursor()
                 c.execute("""
@@ -1086,10 +1086,10 @@ elif menu == "ustawienia":
 
 
     with st.expander("Godziny pracy lekarzy"):
-        # 1ï¸â£ wybÃ³r lekarza
+        # 1️⃣ wybór lekarza
         lekarze_df = pd.read_sql("SELECT ID, Imie, Nazwisko FROM Lekarze", conn)
         if lekarze_df.empty:
-            st.info("Brak lekarzy â dodaj lekarza w zakÅadce Pacjenci.")
+            st.info("Brak lekarzy — dodaj lekarza w zakładce Pacjenci.")
             st.stop()
         lekarz_options = (lekarze_df["Imie"] + " " + lekarze_df["Nazwisko"]).tolist()
         lekarz_selected = st.selectbox("Wybierz lekarza", lekarz_options)
@@ -1098,40 +1098,40 @@ elif menu == "ustawienia":
             "ID"
         ].values[0]
 
-        # 2ï¸â£ pobranie istniejÄcych godzin
+        # 2️⃣ pobranie istniejących godzin
         godziny_df = pd.read_sql("""
             SELECT ID, DzienTygodnia, GodzinaOd, GodzinaDo
             FROM GodzinyPracyLekarzy
             WHERE LekarzID=?
             ORDER BY CASE
-                WHEN DzienTygodnia='PoniedziaÅek' THEN 1
+                WHEN DzienTygodnia='Poniedziałek' THEN 1
                 WHEN DzienTygodnia='Wtorek' THEN 2
-                WHEN DzienTygodnia='Åroda' THEN 3
+                WHEN DzienTygodnia='Środa' THEN 3
                 WHEN DzienTygodnia='Czwartek' THEN 4
-                WHEN DzienTygodnia='PiÄtek' THEN 5
+                WHEN DzienTygodnia='Piątek' THEN 5
                 WHEN DzienTygodnia='Sobota' THEN 6
                 WHEN DzienTygodnia='Niedziela' THEN 7
             END
         """, conn, params=(lekarz_id,))
 
-        # 3ï¸â£ edycja/usuÅ w jednej pÄtli
-        st.subheader("ð Edytuj lub usuÅ godziny")
+        # 3️⃣ edycja/usuń w jednej pętli
+        st.subheader("🕒 Edytuj lub usuń godziny")
         for _, row in godziny_df.iterrows():
             od_dom = datetime.strptime(row["GodzinaOd"], "%H:%M").time()
             do_dom = datetime.strptime(row["GodzinaDo"], "%H:%M").time()
 
             cols = st.columns([2,2,1,1])
             cols[0].markdown(f"**{row['DzienTygodnia']}**")
-            # time_input na aktualnych wartoÅciach
+            # time_input na aktualnych wartościach
             new_od = cols[1].time_input("", od_dom, key=f"od_{row['ID']}")
             new_do = cols[2].time_input("", do_dom, key=f"do_{row['ID']}")
 
             # Zapisz zmiany
-            if cols[3].button("ð¾", key=f"save_{row['ID']}"):
+            if cols[3].button("💾", key=f"save_{row['ID']}"):
                 sod = new_od.strftime("%H:%M")
                 sdo = new_do.strftime("%H:%M")
                 if sod >= sdo:
-                    st.error("Godzina koÅcowa musi byÄ pÃ³Åºniejsza.")
+                    st.error("Godzina końcowa musi być późniejsza.")
                 else:
                     conn.execute("""
                         UPDATE GodzinyPracyLekarzy
@@ -1142,29 +1142,29 @@ elif menu == "ustawienia":
                     st.success("Zaktualizowano.")
 
 
-            # UsuÅ wpis
-            if cols[3].button("ðï¸", key=f"del_{row['ID']}"):
+            # Usuń wpis
+            if cols[3].button("🗑️", key=f"del_{row['ID']}"):
                 conn.execute("DELETE FROM GodzinyPracyLekarzy WHERE ID=?", (row["ID"],))
                 conn.commit()
-                st.success("UsuniÄto.")
+                st.success("Usunięto.")
 
 
-        # 4ï¸â£ formularz dodawania nowych godzin
+        # 4️⃣ formularz dodawania nowych godzin
         st.markdown("---")
-        st.subheader("â Dodaj nowe godziny")
+        st.subheader("➕ Dodaj nowe godziny")
         with st.form("form_add_hours", clear_on_submit=True):
-            dzien = st.selectbox("DzieÅ tygodnia", [
-                "PoniedziaÅek","Wtorek","Åroda","Czwartek",
-                "PiÄtek","Sobota","Niedziela"
+            dzien = st.selectbox("Dzień tygodnia", [
+                "Poniedziałek","Wtorek","Środa","Czwartek",
+                "Piątek","Sobota","Niedziela"
             ])
             godz_od = st.time_input("Godzina od")
             godz_do = st.time_input("Godzina do")
-            dodaj = st.form_submit_button("Dodaj godzinÄ")
+            dodaj = st.form_submit_button("Dodaj godzinę")
             if dodaj:
                 sod = godz_od.strftime("%H:%M")
                 sdo = godz_do.strftime("%H:%M")
                 if sod >= sdo:
-                    st.error("Godzina koÅcowa musi byÄ pÃ³Åºniejsza niÅ¼ poczÄtkowa.")
+                    st.error("Godzina końcowa musi być późniejsza niż początkowa.")
                 else:
                     conn.execute("""
                         INSERT INTO GodzinyPracyLekarzy
@@ -1172,7 +1172,7 @@ elif menu == "ustawienia":
                         VALUES (?,?,?,?)
                     """, (lekarz_id, dzien, sod, sdo))
                     conn.commit()
-                    st.success(f"Dodano: {dzien} {sod}â{sdo}")
+                    st.success(f"Dodano: {dzien} {sod}–{sdo}")
 
 
 
@@ -1183,11 +1183,11 @@ def wyslij_sms(numer, tresc):
         from_=Config.TWILIO_NUMBER,
         to=numer
     )
-    st.success(f"SMS wysÅany do {numer}")
+    st.success(f"SMS wysłany do {numer}")
 
 def wyslij_sms_potwierdzenie(pacjent_id, data, godzina, conn):
     pacjent = pd.read_sql(f"SELECT * FROM Pacjenci WHERE ID={pacjent_id}", conn).iloc[0]
-    tresc = f"â Potwierdzenie rezerwacji: Wizyta u lekarza o {godzina} dnia {data}.\nð Do zobaczenia!"
+    tresc = f"✅ Potwierdzenie rezerwacji: Wizyta u lekarza o {godzina} dnia {data}.\n😊 Do zobaczenia!"
     wyslij_sms(pacjent['Telefon'], tresc)
 
 def wyslij_przypomnienie():
@@ -1204,7 +1204,7 @@ def wyslij_przypomnienie():
                 pacjent = c.fetchone()
                 if pacjent:
                     telefon = pacjent[0]
-                    tresc = f"â° Przypomnienie: Twoja wizyta o {godzina} dnia {data}. Prosimy o punktualnoÅÄ!"
+                    tresc = f"⏰ Przypomnienie: Twoja wizyta o {godzina} dnia {data}. Prosimy o punktualność!"
                     wyslij_sms(telefon, tresc)
                     c.execute("UPDATE Wizyty SET PrzypomnienieWyslane=1 WHERE ID=?", (id_wizyty,))
                     conn_local.commit()
@@ -1212,7 +1212,7 @@ def wyslij_przypomnienie():
 def przypomnienia_loop():
     while True:
         wyslij_przypomnienie()
-        time.sleep(60)  # sprawdzaj co minutÄ
+        time.sleep(60)  # sprawdzaj co minutę
 
 
 
@@ -1220,13 +1220,13 @@ def dodaj_testowe_dane():
     conn = sqlite3.connect(Config.DB_FILE)
     c = conn.cursor()
 
-    # Dodaj pacjenta jeÅli brak
+    # Dodaj pacjenta jeśli brak
     c.execute("SELECT COUNT(*) FROM Pacjenci")
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO Pacjenci (Imie, Nazwisko, Telefon, PESEL) VALUES (?, ?, ?, ?)",
                   ("Jan", "Kowalski", "500600700", "12345678901"))
 
-    # Dodaj lekarza jeÅli brak
+    # Dodaj lekarza jeśli brak
     c.execute("SELECT COUNT(*) FROM Lekarze")
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO Lekarze (Imie, Nazwisko, Specjalizacja, Czas_Wizyty, KalendarzID) VALUES (?, ?, ?, ?, ?)",
@@ -1235,9 +1235,9 @@ def dodaj_testowe_dane():
     conn.commit()
 
 def zarezerwuj_wizyte(pesel, data, lekarz):
-    # Tu Twoja logika â np. sprawdzenie dostÄpnoÅci, zapis do pliku
-    print(f"ð RezerwujÄ wizytÄ: PESEL={pesel}, DATA={data}, LEKARZ={lekarz}")
-    # Tymczasowo zakÅadamy, Å¼e kaÅ¼da rezerwacja siÄ udaje
+    # Tu Twoja logika — np. sprawdzenie dostępności, zapis do pliku
+    print(f"🔔 Rezerwuję wizytę: PESEL={pesel}, DATA={data}, LEKARZ={lekarz}")
+    # Tymczasowo zakładamy, że każda rezerwacja się udaje
     return True
 
 
