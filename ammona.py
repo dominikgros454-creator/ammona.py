@@ -302,27 +302,6 @@ if display_names:
                     week_dates = [(monday + timedelta(days=i)) for i in range(7)]
                     week_strs = [d.isoformat() for d in week_dates]
 
-                    # --- PRZYCISK NAPRAWCZY: ustaw ręcznie aktualny tydzień ---
-                    repair_col1, repair_col2 = st.columns([3,1])
-                    with repair_col1:
-                        st.write("")  # miejsce na opis jeśli chcesz
-                    with repair_col2:
-                        if st.button("Ustaw ten tydzień (Ania = Kuchnia)", key="fix_this_week"):
-                            # mapping jaki chcesz na ten tydzień:
-                            fix_map = {
-                                "Kamil": "Łazienki",
-                                "Ania": "Kuchnia",
-                                "Dominik": "Pranie",
-                                "Mateusz": "Podłogi",
-                            }
-                            try:
-                                assign_week_tasks(monday, fix_map, conn=conn)
-                                st.success("Tydzień został ustawiony: Ania = Kuchnia itd.")
-                                safe_rerun()
-                            except Exception as e:
-                                st.error(f"Błąd podczas ustawiania tygodnia: {e}")
-
-
                     st.markdown(f"**Tydzień:** {monday.isoformat()} — {(monday + timedelta(days=6)).isoformat()}")
 
                     # pobierz wszystkie dyżury dla tego tygodnia i posortuj po dziecku i dacie
