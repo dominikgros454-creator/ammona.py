@@ -19,7 +19,7 @@ class Config:
     DB_FILE = 'przychodnia.db'
     TIMEZONE = pytz.timezone('Europe/Warsaw')
     TWILIO_SID = st.secrets["TWILIO_SID"]
-    TWILIO_TOKEN = 'cbb7189579a4651c12fcfef4bcd6c46c'
+    TWILIO_TOKEN = st.secrets["TWILIO_TOKEN"]
     TWILIO_NUMBER = '+48732126845'
     GOOGLE_CREDS = 'przychodnia-system-api-661462b19bdb.json'
     DEFAULT_DURATION = 30
