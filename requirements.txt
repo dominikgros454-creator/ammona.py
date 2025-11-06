@@ -5,4 +5,5 @@ plotly
 google-api-python-client
 google-auth
 pytz
+pyserial
 
