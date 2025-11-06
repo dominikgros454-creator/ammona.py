@@ -704,7 +704,7 @@ if menu == "start":
 
 
 
-        # --- widget: nowe rezerwacje z bota (ostatnie 30 minut) ---
+        # --- widget: nowe rezerwacje z bota (ostatnie 30 minut) --- #
         bot_count = get_bot_count(conn)  # conn to Twoje połączenie sqlite3 używane wcześniej
 
         st.markdown(f"""
