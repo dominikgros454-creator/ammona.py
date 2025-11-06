@@ -14,6 +14,10 @@ import os
 import streamlit as st
 from streamlit.components.v1 import html
 import plotly.graph_objects as go
+import serial
+from serial import SerialTimeoutException
+import threading
+
 
 class Config:
     DB_FILE = 'przychodnia.db'
