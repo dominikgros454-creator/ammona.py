@@ -197,13 +197,8 @@ def wyslij_sms_modem(numer: str, tresc: str, retries: int = 2, timeout_send: int
 
 
 def wyslij_sms(numer, tresc):
-    client = Client(Config.TWILIO_SID, Config.TWILIO_TOKEN)
-    message = client.messages.create(
-        body=tresc,
-        from_=Config.TWILIO_NUMBER,
-        to=numer
-    )
-    st.success(f"SMS wysłany do {numer}")
+    # Jeżeli chcesz przetworzyć polskie znaki, dodaj transliterację tutaj
+    return wyslij_sms_modem(numer, tresc)
 
 def wyslij_sms_potwierdzenie(pacjent_id, data_str, godzina, conn):
     # 1) Budujemy treść SMS-a
