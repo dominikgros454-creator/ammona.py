@@ -92,6 +92,36 @@ def init_db():
     conn.commit()
     conn.close()
 
+from datetime import datetime, timedelta
+
+def get_bot_count(conn):
+    """
+    Zwraca liczbę rezerwacji ze źródła 'Bot_SMS' w oknie ostatnich 30 minut.
+    conn: aktywne sqlite3.Connection lub ścieżka do DB (jeśli nie jest connection).
+    """
+    close_conn = False
+    if isinstance(conn, str):
+        conn = sqlite3.connect(conn)
+        close_conn = True
+
+    try:
+        teraz = datetime.now()
+        prog = teraz - timedelta(minutes=30)
+        # SQLite expects 'YYYY-MM-DD HH:MM:SS' format
+        prog_str = prog.strftime("%Y-%m-%d %H:%M:%S")
+        q = """
+            SELECT COUNT(*) FROM Wizyty
+            WHERE Zrodlo = 'Bot_SMS'
+              AND datetime(Data || ' ' || Godzina) >= ?
+        """
+        cur = conn.cursor()
+        cur.execute(q, (prog_str,))
+        cnt = cur.fetchone()[0] or 0
+        return int(cnt)
+    finally:
+        if close_conn:
+            conn.close()
+
 def get_calendar_service():
     creds = service_account.Credentials.from_service_account_file(
         Config.GOOGLE_CREDS,
