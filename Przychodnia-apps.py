@@ -616,14 +616,14 @@ if menu == "start":
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
     with col1:
-        # Wklej zamiast starego st.markdown(...) dla sekcji with col1:
+        # przygotuj wartości po stronie Pythona
         target_zak = skala(zakończone)
         target_wtr = skala(w_trakcie)
         target_anul = skala(anulowane)
-        anim_dur = 0.6  # czas animacji w sekundach (zmień na 0.5 lub 0.7 jeśli chcesz)
-        start_delay = 80
-        stagger_ms = 80
-        
+        anim_dur = 0.6       # czas animacji w sekundach
+        start_delay = 80     # ms opóźnienia przed startem animacji
+        stagger_ms = 80      # ms opóźnienia między słupkami
+
         st.markdown(f"""
         <style>
         .bar-container {{
@@ -644,7 +644,7 @@ if menu == "start":
           margin: 0 auto;
           background-image: linear-gradient(to top,#7426ef,#e333dc);
           border-radius:6px;
-          height:0px;           /* start at 0 */
+          height:0px;
           transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
           will-change: height;
           box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
@@ -652,10 +652,6 @@ if menu == "start":
         .bar-label {{ margin-top:8px; white-space: nowrap; display: inline-block; font-size:14px;}}
         .bar-widget {{ position: relative; padding-top: 36px; }}
         .bar-title {{ position:absolute; top:8px; left:20px; font-weight:600; font-size:18px; background:white; padding:0 6px; z-index:2; }}
-        /* delikatne opóźnienie przy starcie */
-        .bar-item .bar[style] {{
-          /* nothing; inline style nadpisze */
-        }}
         </style>
 
         <div class="bar-widget">
@@ -685,31 +681,27 @@ if menu == "start":
 
         <script>
         (function() {{
-          // Delikatny timeout żeby DOM został wyrenderowany przez Streamlit
-          const startDelay = 80;              // ms przed startem animacji
-          const stagger = 80;                 // ms opóźnienia między słupkami
-          const easing = null;                // nieużywane tu — CSS używa cubic-bezier
+          const startDelay = {start_delay};    // ms
+          const stagger = {stagger_ms};         // ms
 
           function animateBar(id, delay) {{
             const el = document.getElementById(id);
             if (!el) return;
             const target = el.getAttribute('data-target') || '0';
-            // ustawienie wysokości po delay
             setTimeout(() => {{
-            // przypisz inline style height (px) — CSS transition wykona animację
-            el.style.height = target + 'px';
+              el.style.height = target + 'px';
             }}, delay);
           }}
 
-          // uruchom animacje sekwencyjnie
           setTimeout(() => {{
             animateBar('bar-zak', 0);
-            animateBar('bar-wtr', {stagger});
-            animateBar('bar-anul', {stagger} * 2);
+            animateBar('bar-wtr', stagger);
+            animateBar('bar-anul', stagger * 2);
           }}, startDelay);
         }})();
         </script>
         """, unsafe_allow_html=True)
+
 
 
         # --- widget: nowe rezerwacje z bota (ostatnie 30 minut) ---
