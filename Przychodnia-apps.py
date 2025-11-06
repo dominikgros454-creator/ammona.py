@@ -699,32 +699,6 @@ if menu == "start":
                   </div>
               """, unsafe_allow_html=True)
 
-    with col_mid:
-        liczba_wiadomosci = 8  # <- zastąp dynamiczną wartością z bazy jeśli chcesz
-
-        st.markdown(f"""
-        <div style="
-            border: 1px solid #333;
-            border-radius: 16px;
-            padding: 16px;
-            width: 140px;
-            height: 140px;
-            margin: 0 auto 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: white;
-        ">
-          <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;">
-            Wysłane wiadomości
-          </div>
-          <div style="font-size: 36px; font-weight: bold;">
-            {liczba_wiadomosci}
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-
 elif menu == "rezerwacja":
     st.header("Rezerwacja wizyty")
 
