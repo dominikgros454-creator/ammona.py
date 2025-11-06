@@ -656,7 +656,6 @@ if menu == "start":
 
         <div class="bar-widget">
           <div class="bar-container">
-            <div class="bar-title">Wizyty:</div>
 
             <div class="bar-item">
               <div class="bar-value">{zakończone}</div>
