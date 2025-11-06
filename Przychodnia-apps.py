@@ -30,6 +30,12 @@ class Config:
     BUFFER_TIME = 10
     CHECK_INTERVAL = 15
     LICENSE_KEY = 'AKTYWNA'
+    
+class ModemConfig:
+    PORT = "COM3"           # zmień gdy inny port
+    BAUDRATE = 115200       # lub 9600 w zależności od modemu
+    TIMEOUT = 5
+    LOCK = threading.Lock()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH  = os.path.join(BASE_DIR, Config.DB_FILE)
