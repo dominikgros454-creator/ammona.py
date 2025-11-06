@@ -105,6 +105,29 @@ conn = sqlite3.connect(Config.DB_FILE)
 
 st.set_page_config(page_title="Przychodnia", layout="wide")
 
+def init_modem():
+    try:
+        with ModemConfig.LOCK:
+            ser = serial.Serial(port=ModemConfig.PORT,
+                                baudrate=ModemConfig.BAUDRATE,
+                                timeout=ModemConfig.TIMEOUT,
+                                write_timeout=ModemConfig.TIMEOUT)
+            time.sleep(0.5)
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            ser.write(b'ATE0\r')
+            time.sleep(0.2)
+            _ = ser.read(ser.in_waiting or 64)
+            ser.write(b'AT+CMGF=1\r')
+            time.sleep(0.2)
+            _ = ser.read(ser.in_waiting or 64)
+            ser.close()
+        return True
+    except Exception as e:
+        st.warning(f"Nie udało się zainicjalizować modemu: {e}")
+        return False
+
+
 # --- 2️⃣ Inicjalizacja menu w state ---------------------
 # 1️⃣ Menu na samej górze (biały header)
 import streamlit as st
