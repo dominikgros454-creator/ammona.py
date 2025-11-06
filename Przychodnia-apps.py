@@ -680,6 +680,47 @@ if menu == "start":
         </div>
         """, unsafe_allow_html=True)
 
+        # --- widget: nowe rezerwacje z bota (ostatnie 30 minut) ---
+        bot_count = get_bot_count(conn)  # conn to Twoje połączenie sqlite3 używane wcześniej
+
+        st.markdown(f"""
+        <style>
+        .bot-widget {{
+          width: 180px;
+          height: 180px;
+          border-radius: 14px;
+          background: linear-gradient(180deg, #ffffff 0%, #f7f7ff 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          margin-top: 18px;
+          margin-left: 12px;
+          box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+          border: 1px solid #eee;
+        }}
+        .bot-title {{
+          font-size: 13px;
+          color: #666;
+          font-weight: 600;
+          margin-bottom: 6px;
+        }}
+        .bot-number {{
+          font-size: 56px;
+          font-weight: 700;
+          color: #7426ef;
+          letter-spacing: -1px;
+        }}
+        </style>
+
+        <div class="bot-widget">
+          <div class="bot-title">Nowe rezerwacje z bota</div>
+          <div class="bot-number">{bot_count}</div>
+          <div style="font-size:12px;color:#999;margin-top:6px;">ostatnie 30 min</div>
+        </div>
+        """, unsafe_allow_html=True)
+        # --- koniec widgetu ---
+
 
     with col2:
         st.markdown("""
