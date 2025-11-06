@@ -616,69 +616,99 @@ if menu == "start":
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
     with col1:
+        # Wklej zamiast starego st.markdown(...) dla sekcji with col1:
+        target_zak = skala(zakończone)
+        target_wtr = skala(w_trakcie)
+        target_anul = skala(anulowane)
+        anim_dur = 0.6  # czas animacji w sekundach (zmień na 0.5 lub 0.7 jeśli chcesz)
+
         st.markdown(f"""
         <style>
-         .bar-container {{
+        .bar-container {{
           display:flex;
           align-items:flex-end;
           height:320px;
           gap:34px;
           padding:20px;
-          border: 1px solid #fffffff;
           border-radius: 8px;
           position: relative;
-          box-shadow: 0 0 12px rgba(0, 0, 0, 0.2); /* łagodny cień */
+          box-shadow: 0 0 12px rgba(0,0,0,0.12);
+          background:linear-gradient(180deg,#fff,#fbfbff);
         }}
-        .bar-item {{ text-align:center;}}
-        .bar-value {{ font-weight:bold; margin-bottom:6px; }}
-        .bar {{ width:50px; align-self: center; margin: 0 auto; background-image: linear-gradient(
-            to top,
-            #7426ef,
-            #e333dc
-            );
-            border-radius:6px; transition:height .3s; }}
-        .bar-label {{ margin-top:8px; white-space: nowrap; display: inline-block;}}
-        .bar-widget {{
-          position: relative;
-          padding-top: 36px;
+        .bar-item {{ text-align:center; width:80px;}}
+        .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px;}}
+        .bar {{
+          width:50px;
+          margin: 0 auto;
+          background-image: linear-gradient(to top,#7426ef,#e333dc);
+          border-radius:6px;
+          height:0px;           /* start at 0 */
+          transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
+          will-change: height;
+          box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
         }}
-        .bar-widget .widget-title {{
-          position: absolute;
-          top: 8px;
-          left: 16px;
-          font-weight: 500;
-          font-size: 18px;
-        }}
-        .bar-title {{
-          position: absolute;
-          top: 8px;
-          left: 20px;
-          font-weight: 570;
-          font-size: 18px;
-          background: white;
-          padding: 0 6px;
+        .bar-label {{ margin-top:8px; white-space: nowrap; display: inline-block; font-size:14px;}}
+        .bar-widget {{ position: relative; padding-top: 36px; }}
+        .bar-title {{ position:absolute; top:8px; left:20px; font-weight:600; font-size:18px; background:white; padding:0 6px; z-index:2; }}
+        /* delikatne opóźnienie przy starcie */
+        .bar-item .bar[style] {{
+          /* nothing; inline style nadpisze */
         }}
         </style>
+
         <div class="bar-widget">
           <div class="bar-container">
-          <div class="bar-title">Wizyty:</div>
-          <div class="bar-item">
-            <div class="bar-value">{zakończone}</div>
-            <div class="bar" style="height: {skala(zakończone)}px;"></div>
-            <div class="bar-label">Zakończone</div>
-          </div>
-          <div class="bar-item">
-            <div class="bar-value">{w_trakcie}</div>
-            <div class="bar" style="height: {skala(w_trakcie)}px;"></div>
-            <div class="bar-label">W trakcie</div>
-       </div>
-          <div class="bar-item">
-            <div class="bar-value">{anulowane}</div>
-            <div class="bar" style="height: {skala(anulowane)}px;"></div>
-            <div class="bar-label">Anulowane</div>
+            <div class="bar-title">Wizyty:</div>
+
+            <div class="bar-item">
+              <div class="bar-value">{zakończone}</div>
+              <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
+              <div class="bar-label">Zakończone</div>
+            </div>
+
+            <div class="bar-item">
+              <div class="bar-value">{w_trakcie}</div>
+              <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
+              <div class="bar-label">W trakcie</div>
+            </div>
+
+            <div class="bar-item">
+              <div class="bar-value">{anulowane}</div>
+              <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
+              <div class="bar-label">Anulowane</div>
+            </div>
+
           </div>
         </div>
+
+        <script>
+        (function() {{
+          // Delikatny timeout żeby DOM został wyrenderowany przez Streamlit
+          const startDelay = 80;              // ms przed startem animacji
+          const stagger = 80;                 // ms opóźnienia między słupkami
+          const easing = null;                // nieużywane tu — CSS używa cubic-bezier
+
+          function animateBar(id, delay) {{
+            const el = document.getElementById(id);
+            if (!el) return;
+            const target = el.getAttribute('data-target') || '0';
+            // ustawienie wysokości po delay
+            setTimeout(() => {{
+            // przypisz inline style height (px) — CSS transition wykona animację
+            el.style.height = target + 'px';
+            }}, delay);
+          }}
+
+          // uruchom animacje sekwencyjnie
+          setTimeout(() => {{
+            animateBar('bar-zak', 0);
+            animateBar('bar-wtr', {stagger});
+            animateBar('bar-anul', {stagger} * 2);
+          }}, startDelay);
+        }})();
+        </script>
         """, unsafe_allow_html=True)
+
 
         # --- widget: nowe rezerwacje z bota (ostatnie 30 minut) ---
         bot_count = get_bot_count(conn)  # conn to Twoje połączenie sqlite3 używane wcześniej
