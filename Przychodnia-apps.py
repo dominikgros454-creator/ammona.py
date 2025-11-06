@@ -621,7 +621,9 @@ if menu == "start":
         target_wtr = skala(w_trakcie)
         target_anul = skala(anulowane)
         anim_dur = 0.6  # czas animacji w sekundach (zmień na 0.5 lub 0.7 jeśli chcesz)
-
+        start_delay = 80
+        stagger_ms = 80
+        
         st.markdown(f"""
         <style>
         .bar-container {{
