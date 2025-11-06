@@ -537,7 +537,7 @@ elif menu == "ustawienia":
 
 
 if menu == "start":
-    col1, col_mid, col2 = st.columns([1, 0.6, 1])
+    col1, col2 = st.columns([1, 1])
 
     # 1) liczymy anulowane
     anulowane = pd.read_sql(
