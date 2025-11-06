@@ -144,6 +144,58 @@ def svg_data_uri(path: str) -> str:
     b64 = base64.b64encode(raw).decode("utf-8")
     return f"data:image/svg+xml;base64,{b64}"
 
+def wyslij_sms_modem(numer: str, tresc: str, retries: int = 2, timeout_send: int = 30):
+    last_exc = None
+    for attempt in range(retries + 1):
+        try:
+            with ModemConfig.LOCK:
+                ser = serial.Serial(port=ModemConfig.PORT,
+                                    baudrate=ModemConfig.BAUDRATE,
+                                    timeout=ModemConfig.TIMEOUT,
+                                    write_timeout=ModemConfig.TIMEOUT)
+                time.sleep(0.2)
+                ser.reset_input_buffer()
+                ser.reset_output_buffer()
+
+                ser.write(b'AT+CMGF=1\r')
+                time.sleep(0.2)
+                _ = ser.read(ser.in_waiting or 64).decode(errors='ignore')
+
+                cmd = f'AT+CMGS="{numer}"\r'.encode()
+                ser.write(cmd)
+                time.sleep(0.2)
+                prompt = ser.read(ser.in_waiting or 64).decode(errors='ignore')
+                # niektóre modemy nie zwracają '>' od razu — kontynuujemy
+
+                ser.write(tresc.encode('utf-8', errors='replace'))
+                ser.write(bytes([26]))  # CTRL+Z
+                ser.flush()
+
+                end_time = time.time() + timeout_send
+                buffer = ""
+                while time.time() < end_time:
+                    chunk = ser.read(ser.in_waiting or 1).decode(errors='ignore')
+                    if chunk:
+                        buffer += chunk
+                        if "+CMGS" in buffer:
+                            ser.close()
+                            st.success(f"SMS wysłany do {numer}")
+                            return True
+                        if "ERROR" in buffer:
+                            raise Exception(f"Modem zwrócił ERROR: {buffer}")
+                    else:
+                        time.sleep(0.2)
+
+                ser.close()
+                raise TimeoutError(f"Brak potwierdzenia wysyłki z modemu. Odpowiedź: {buffer}")
+        except Exception as e:
+            last_exc = e
+            time.sleep(1)
+            continue
+    st.warning(f"Nie udało się wysłać SMS do {numer}: {last_exc}")
+    return False
+
+
 def wyslij_sms(numer, tresc):
     client = Client(Config.TWILIO_SID, Config.TWILIO_TOKEN)
     message = client.messages.create(
