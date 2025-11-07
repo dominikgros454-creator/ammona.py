@@ -613,7 +613,7 @@ if menu == "start":
             MAX_LOG = math.log(1 + 100)  # zakładamy że 100 wizyt to „górna granica”
 
     # logarytmiczna skala spowalniająca wzrost słupka
-        return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
+           return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
 
         with col1:
