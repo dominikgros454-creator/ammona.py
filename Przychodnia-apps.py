@@ -754,53 +754,53 @@ if menu == "start":
     # --- koniec widgetu ---
 
 
-with col2:
-    st.markdown("""
-    <div style="margin-left: 40px; font-size: 13px; font-weight: 600; max-width: 300px; margin: 0 0 12px 40px;">
-      Najbliższe wizyty:
-    </div>
-    """, unsafe_allow_html=True)
-
-
-    df = pd.read_sql("""
-        SELECT W.Data, W.Godzina, L.Imie, L.Nazwisko
-        FROM Wizyty AS W
-        JOIN Lekarze AS L ON W.LekarzID=L.ID
-        WHERE W.Status='Zaplanowana'
-          AND datetime(W.Data || ' ' || W.Godzina) >= datetime('now')
-        ORDER BY W.Data, W.Godzina
-        LIMIT 3
-    """, conn)
-
-    if df.empty:
+    with col2:
         st.markdown("""
-        <div style="margin-left: 140px; color: #555;">
-          Brak zaplanowanych wizyt.
+        <div style="margin-left: 40px; font-size: 13px; font-weight: 600; max-width: 300px; margin: 0 0 12px 40px;">
+          Najbliższe wizyty:
         </div>
         """, unsafe_allow_html=True)
-    else:
-        teraz = datetime.now()
-        for _, r in df.iterrows():
-            dt = datetime.strptime(f"{r['Data']} {r['Godzina']}",
-                                     "%Y-%m-%d %H:%M")
-            mins = int((dt - teraz).total_seconds() // 60)
-            st.markdown(f"""
-              <div style="
-                  position: relative;
-                  padding: 12px;
-                  border-radius: 8px;
-                  margin-bottom: 8px;
-                  background: white;
-                  max-width: 300px;
-                  margin-left: 40px;
-                  box-shadow: 0 0 0 1px #7426ef, 0 0 0 1px #e333dc;
-                ">
-                  <strong>Wizyta u dr {r['Imie']} {r['Nazwisko']}</strong><br>
-                  <span style="color: grey; font-size: 14px;">
-                      Za {mins} minut
-                  </span>
-              </div>
-          """, unsafe_allow_html=True)
+
+
+        df = pd.read_sql("""
+            SELECT W.Data, W.Godzina, L.Imie, L.Nazwisko
+            FROM Wizyty AS W
+            JOIN Lekarze AS L ON W.LekarzID=L.ID
+            WHERE W.Status='Zaplanowana'
+              AND datetime(W.Data || ' ' || W.Godzina) >= datetime('now')
+            ORDER BY W.Data, W.Godzina
+            LIMIT 3
+        """, conn)
+
+        if df.empty:
+            st.markdown("""
+            <div style="margin-left: 140px; color: #555;">
+              Brak zaplanowanych wizyt.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            teraz = datetime.now()
+            for _, r in df.iterrows():
+                dt = datetime.strptime(f"{r['Data']} {r['Godzina']}",
+                                         "%Y-%m-%d %H:%M")
+                mins = int((dt - teraz).total_seconds() // 60)
+                st.markdown(f"""
+                  <div style="
+                      position: relative;
+                      padding: 12px;
+                      border-radius: 8px;
+                      margin-bottom: 8px;
+                      background: white;
+                      max-width: 300px;
+                      margin-left: 40px;
+                      box-shadow: 0 0 0 1px #7426ef, 0 0 0 1px #e333dc;
+                    ">
+                      <strong>Wizyta u dr {r['Imie']} {r['Nazwisko']}</strong><br>
+                      <span style="color: grey; font-size: 14px;">
+                          Za {mins} minut
+                      </span>
+                  </div>
+              """, unsafe_allow_html=True)
 		  
 elif menu == "rezerwacja":
     st.header("Rezerwacja wizyty")
