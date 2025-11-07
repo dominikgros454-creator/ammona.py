@@ -615,102 +615,146 @@ if menu == "start":
     # logarytmiczna skala spowalniająca wzrost słupka
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
-    with col1:
-        # --- ZASTĄP CAŁY BLOK W with col1 JEDNYM NASTĘPUJĄCYM st.markdown ---
-        target_zak = skala(zakończone)
-        target_wtr = skala(w_trakcie)
-        target_anul = skala(anulowane)
-        anim_dur = 0.6
-        start_delay = 80
-        stagger_ms = 80
+        # ... (logika obliczeniowa: anulowane, wizyty_plan, itd.) ...
+        # ... (funkcja skala) ...
 
-        # Ukryj cały HTML tego widżetu, żeby nie zasłaniał innych elementó
-       
+        with col1:
+        # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) ---
+            target_zak = skala(zakończone)
+            target_wtr = skala(w_trakcie)
+            target_anul = skala(anulowane)
+            anim_dur = 0.6
+            start_delay = 80
+            stagger_ms = 80
+    
+            # POPRAWKA: Rozpocznij st.markdown TUTAJ
+            st.markdown(f"""
+            <style> 
+            /* POPRAWKA: Dodano brakujący tag <style> */
+            .bar-widget-wrapper {{ position: relative; z-index: 5; }}
+            .bar-container {{
+              display:flex;
+              align-items:flex-end;
+              height:320px;
+              gap:34px;
+              padding:20px;
+              border-radius: 8px;
+              box-shadow: 0 0 12px rgba(0,0,0,0.12);
+              background:linear-gradient(180deg,#fff,#fbfbff);
+            }}
+            .bar-item {{ text-align:center; width:80px;}}
+            .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
+            .bar {{
+              width:50px;
+              margin: 0 auto;
+              background-image: linear-gradient(to top,#7426ef,#e333dc);
+              border-radius:6px;
+              height:0px;
+              transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
+              will-change: height;
+              box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
+            }}
+            .bar-label {{
+              margin-top:8px;
+              white-space: normal;
+              text-overflow: clip;
+              overflow: visible;
+              font-size:14px;
+              color:#333;
+            }}
+            /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
+            .bar-widget-wrapper * {{
+              white-space: normal !important;
+              text-overflow: clip !important;
+              overflow: visible !important;
+            }}
+            </style>
 
+            <div class="bar-widget-wrapper">
+              <div class="bar-container">
+                <div class="bar-item">
+                  <div class="bar-value">{zakończone}</div>
+                  <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
+                  <div class="bar-label">Zakończone</div>
+                </div>
 
-        .bar-widget-wrapper {{ position: relative; z-index: 5; }}
-        .bar-container {{
-          display:flex;
-          align-items:flex-end;
-          height:320px;
-          gap:34px;
-          padding:20px;
-          border-radius: 8px;
-          box-shadow: 0 0 12px rgba(0,0,0,0.12);
-          background:linear-gradient(180deg,#fff,#fbfbff);
-        }}
-        .bar-item {{ text-align:center; width:80px;}}
-        .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
-        .bar {{
-          width:50px;
-          margin: 0 auto;
-          background-image: linear-gradient(to top,#7426ef,#e333dc);
-          border-radius:6px;
-          height:0px;
-          transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
-          will-change: height;
-          box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
-        }}
-        .bar-label {{
-          margin-top:8px;
-          white-space: normal;        /* pozwól na zawijanie */
-          text-overflow: clip;        /* usuń trzy kropki */
-          overflow: visible;
-          font-size:14px;
-          color:#333;
-        }}
-        /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
-        .bar-widget-wrapper * {{
-          white-space: normal !important;
-          text-overflow: clip !important;
-          overflow: visible !important;
-        }}
-        </style>
+                <div class="bar-item">
+                  <div class="bar-value">{w_trakcie}</div>
+                  <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
+                  <div class="bar-label">W trakcie</div>
+               </div>
 
-        <div class="bar-widget-wrapper">
-          <div class="bar-container">
-            <div class="bar-item">
-              <div class="bar-value">{zakończone}</div>
-              <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
-              <div class="bar-label">Zakończone</div>
+                <div class="bar-item">
+                  <div class="bar-value">{anulowane}</div>
+                  <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
+                  <div class="bar-label">Anulowane</div>
+                </div>
+              </div>
             </div>
 
-            <div class="bar-item">
-              <div class="bar-value">{w_trakcie}</div>
-              <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
-              <div class="bar-label">W trakcie</div>
-           </div>
+            <script>
+            (function() {{
+              const startDelay = {start_delay};
+              const stagger = {stagger_ms};
 
-            <div class="bar-item">
-              <div class="bar-value">{anulowane}</div>
-              <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
-              <div class="bar-label">Anulowane</div>
-            </div>
-          </div>
-        </div>
+              function animateBar(id, delay) {{
+                const el = document.getElementById(id);
+                if (!el) return;
+                const target = el.getAttribute('data-target') || '0';
+                setTimeout(() => {{
+                  el.style.height = target + 'px';
+                }}, delay);
+              }}
 
-        <script>
-        (function() {{
-          const startDelay = {start_delay};
-          const stagger = {stagger_ms};
+              setTimeout(() => {{
+                animateBar('bar-zak', 0);
+                animateBar('bar-wtr', stagger);
+                animateBar('bar-anul', stagger * 2);
+              }}, startDelay);
+            }})();
+            </script>
+            """, unsafe_allow_html=True) # POPRAWKA: Zamknięcie st.markdown jest teraz poprawne
 
-          function animateBar(id, delay) {{
-            const el = document.getElementById(id);
-            if (!el) return;
-            const target = el.getAttribute('data-target') || '0';
-            setTimeout(() => {{
-              el.style.height = target + 'px';
-            }}, delay);
-          }}
+    # --- widget: nowe rezerwacje z bota (ten blok był już OK) --- #
+    bot_count = get_bot_count(conn) 
 
-          setTimeout(() => {{
-            animateBar('bar-zak', 0);
-            animateBar('bar-wtr', stagger);
-            animateBar('bar-anul', stagger * 2);
-          }}, startDelay);
-        }})();
-        </script>
-        """, unsafe_allow_html=True)
+    st.markdown(f"""
+    <style>
+    .bot-widget {{
+      width: 180px;
+      height: 180px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7f7ff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 18px;
+      margin-left: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      border: 1px solid #eee;
+    }}
+    .bot-title {{
+      font-size: 13px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }}
+    .bot-number {{
+      font-size: 56px;
+      font-weight: 700;
+      color: #7426ef;
+      letter-spacing: -1px;
+    }}
+    </style>
+
+    <div class="bot-widget">
+      <div class="bot-title">Nowe rezerwacje z bota</div>
+      <div class="bot-number">{bot_count}</div>
+      <div style="font-size:12px;color:#999;margin-top:6px;">ostatnie 30 min</div>
+    </div>
+    """, unsafe_allow_html=True)
+    # --- koniec widgetu ---
 
 
 
