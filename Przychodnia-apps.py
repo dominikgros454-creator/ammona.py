@@ -628,7 +628,6 @@ if menu == "start":
        
 
 
-        /* widget scope only — nie działa globalnie poza elementem, minimalne ryzyko kolizji */
         .bar-widget-wrapper {{ position: relative; z-index: 5; }}
         .bar-container {{
           display:flex;
