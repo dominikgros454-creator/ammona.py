@@ -624,6 +624,22 @@ if menu == "start":
         start_delay = 80     # ms opóźnienia przed startem animacji
         stagger_ms = 80      # ms opóźnienia między słupkami
 
+        # tymczasowy CSS ukrywający niechciany debug/fragment i wynoszący widget na wierzch
+        st.markdown("""
+        <style>
+        .stMarkdown pre, .stMarkdown code { display: none !important; }
+        .bar[data-target=""] { display: none !important; }
+        .bar-widget { position: relative !important; z-index: 9999 !important; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # teraz wywołanie, które renderuje Twój animowany widget
+        st.markdown(f""" 
+          <style> ... Twoje style .bar-container itp. ... </style>
+          <div class="bar-widget"> ... </div>
+          <script> ... </script>
+        """, unsafe_allow_html=True)
+
         st.markdown(f"""
         <style>
         .bar-container {{
