@@ -714,7 +714,7 @@ if menu == "start":
             """, unsafe_allow_html=True) # POPRAWKA: Zamknięcie st.markdown jest teraz poprawne
 
             # --- widget: nowe rezerwacje z bota (ten blok był już OK) --- #
-            bot_count = get_bot_count(conn) 
+                bot_count = get_bot_count(conn) 
 
             st.markdown(f"""
             <style>
