@@ -626,8 +626,8 @@ if menu == "start":
         stagger_ms = 80
     
          # POPRAWKA: Rozpocznij st.markdown TUTAJ
-         st.markdown(f"""
-         <style> 
+        st.markdown(f"""
+        <style> 
         /* POPRAWKA: Dodano brakujący tag <style> */
         .bar-widget-wrapper {{ position: relative; z-index: 5; }}
         .bar-container {{
