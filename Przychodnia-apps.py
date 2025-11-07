@@ -607,7 +607,7 @@ if menu == "start":
     )["cnt"][0]
     zakończone = z_kbazy + zakończone_din
 
-    def skala(v):
+def skala(v):
     import math
     MAX_WYSOKOSC = 280  # np. 280px maksymalnej wysokości słupka
     MAX_LOG = math.log(1 + 100)  # zakładamy że 100 wizyt to „górna granica”
