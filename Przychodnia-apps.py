@@ -631,16 +631,16 @@ if menu == "start":
         # POPRAWKA WCIĘĆ: Ta linia musi być wcięta na ten sam poziom, co reszta funkcji!
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
-
-    # Zakładam, że ten blok `with col1:` jest na poziomie, z którego został wywołany
-    with col1:
-        # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) ---
         target_zak = skala(zakończone)
         target_wtr = skala(w_trakcie)
         target_anul = skala(anulowane)
         anim_dur = 0.6
         start_delay = 80
         stagger_ms = 80
+		
+    # Zakładam, że ten blok `with col1:` jest na poziomie, z którego został wywołany
+    with col1:
+        # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) --- #
 
         import os
         is_streamlit_cloud = os.getenv("STREAMLIT_SERVER_HOST") is not None
