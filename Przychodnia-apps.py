@@ -607,60 +607,60 @@ if menu == "start":
     )["cnt"][0]
     zakończone = z_kbazy + zakończone_din
 
-        def skala(v):
-            import math
-            MAX_WYSOKOSC = 280  # np. 280px maksymalnej wysokości słupka
-            MAX_LOG = math.log(1 + 100)  # zakładamy że 100 wizyt to „górna granica”
+    def skala(v):
+        import math
+        MAX_WYSOKOSC = 280  # np. 280px maksymalnej wysokości słupka
+        MAX_LOG = math.log(1 + 100)  # zakładamy że 100 wizyt to „górna granica”
 
     # logarytmiczna skala spowalniająca wzrost słupka
-           return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
+        return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
 
-        with col1:
-        # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) ---
-            target_zak = skala(zakończone)
-            target_wtr = skala(w_trakcie)
-            target_anul = skala(anulowane)
-            anim_dur = 0.6
-            start_delay = 80
-            stagger_ms = 80
+    with col1:
+     # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) ---
+        target_zak = skala(zakończone)
+        target_wtr = skala(w_trakcie)
+        target_anul = skala(anulowane)
+        anim_dur = 0.6
+        start_delay = 80
+        stagger_ms = 80
     
-            # POPRAWKA: Rozpocznij st.markdown TUTAJ
-            st.markdown(f"""
-            <style> 
-            /* POPRAWKA: Dodano brakujący tag <style> */
-            .bar-widget-wrapper {{ position: relative; z-index: 5; }}
-            .bar-container {{
-              display:flex;
-              align-items:flex-end;
-              height:320px;
-              gap:34px;
-              padding:20px;
-              border-radius: 8px;
-              box-shadow: 0 0 12px rgba(0,0,0,0.12);
-              background:linear-gradient(180deg,#fff,#fbfbff);
-            }}
-            .bar-item {{ text-align:center; width:80px;}}
-            .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
-            .bar {{
-              width:50px;
-              margin: 0 auto;
-              background-image: linear-gradient(to top,#7426ef,#e333dc);
-              border-radius:6px;
-              height:0px;
-              transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
-              will-change: height;
-              box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
-            }}
-            .bar-label {{
-              margin-top:8px;
-              white-space: normal;
-              text-overflow: clip;
-              overflow: visible;
-              font-size:14px;
-              color:#333;
-            }}
-            /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
+         # POPRAWKA: Rozpocznij st.markdown TUTAJ
+         st.markdown(f"""
+         <style> 
+        /* POPRAWKA: Dodano brakujący tag <style> */
+        .bar-widget-wrapper {{ position: relative; z-index: 5; }}
+        .bar-container {{
+          display:flex;
+          align-items:flex-end;
+          height:320px;
+          gap:34px;
+          padding:20px;
+          border-radius: 8px;
+          box-shadow: 0 0 12px rgba(0,0,0,0.12);
+          background:linear-gradient(180deg,#fff,#fbfbff);
+        }}
+        .bar-item {{ text-align:center; width:80px;}}
+        .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
+        .bar {{
+          width:50px;
+          margin: 0 auto;
+          background-image: linear-gradient(to top,#7426ef,#e333dc);
+          border-radius:6px;
+          height:0px;
+          transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
+          will-change: height;
+          box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
+        }}
+        .bar-label {{
+          margin-top:8px;
+          white-space: normal;
+          text-overflow: clip;
+          overflow: visible;
+          font-size:14px;
+          color:#333;
+        }}
+        /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
             .bar-widget-wrapper * {{
               white-space: normal !important;
               text-overflow: clip !important;
