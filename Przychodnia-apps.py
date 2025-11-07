@@ -661,36 +661,36 @@ if menu == "start":
           color:#333;
         }}
         /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
-            .bar-widget-wrapper * {{
-              white-space: normal !important;
-              text-overflow: clip !important;
-              overflow: visible !important;
-            }}
-            </style>
+        .bar-widget-wrapper * {{
+            white-space: normal !important;
+            text-overflow: clip !important;
+            overflow: visible !important;
+          }}
+          </style>
 
-            <div class="bar-widget-wrapper">
-              <div class="bar-container">
-                <div class="bar-item">
-                  <div class="bar-value">{zakończone}</div>
-                  <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
-                  <div class="bar-label">Zakończone</div>
-                </div>
+          <div class="bar-widget-wrapper">
+            <div class="bar-container">
+              <div class="bar-item">
+                <div class="bar-value">{zakończone}</div>
+                <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
+                <div class="bar-label">Zakończone</div>
+              </div>
 
-                <div class="bar-item">
-                  <div class="bar-value">{w_trakcie}</div>
-                  <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
-                  <div class="bar-label">W trakcie</div>
+              <div class="bar-item">
+                <div class="bar-value">{w_trakcie}</div>
+                <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
+                <div class="bar-label">W trakcie</div>
                </div>
 
-                <div class="bar-item">
-                  <div class="bar-value">{anulowane}</div>
-                  <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
-                  <div class="bar-label">Anulowane</div>
-                </div>
-              </div>
-            </div>
+               <div class="bar-item">
+                 <div class="bar-value">{anulowane}</div>
+                 <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
+                 <div class="bar-label">Anulowane</div>
+               </div>
+             </div>
+           </div>
 
-            <script>
+           <script>
             (function() {{
               const startDelay = {start_delay};
               const stagger = {stagger_ms};
