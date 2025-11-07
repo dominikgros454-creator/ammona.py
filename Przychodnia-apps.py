@@ -135,6 +135,21 @@ conn = sqlite3.connect(Config.DB_FILE)
 
 st.set_page_config(page_title="Przychodnia", layout="wide")
 
+st.markdown("""
+<style>
+/* Ukrywa surowe linie kodu HTML i <pre><code> bloki */
+div[data-testid="stMarkdownContainer"] pre,
+div[data-testid="stMarkdownContainer"] code {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 def init_modem():
     try:
         with ModemConfig.LOCK:
