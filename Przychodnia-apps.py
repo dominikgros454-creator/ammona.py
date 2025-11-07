@@ -616,17 +616,18 @@ if menu == "start":
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
     with col1:
-        # przygotuj wartości po stronie Pythona
+        # --- ZASTĄP CAŁY BLOK W with col1 JEDNYM NASTĘPUJĄCYM st.markdown ---
         target_zak = skala(zakończone)
         target_wtr = skala(w_trakcie)
         target_anul = skala(anulowane)
-        anim_dur = 0.6       # czas animacji w sekundach
-        start_delay = 80     # ms opóźnienia przed startem animacji
-        stagger_ms = 80      # ms opóźnienia między słupkami
+        anim_dur = 0.6
+        start_delay = 80
+        stagger_ms = 80
 
         st.markdown(f"""
         <style>
-        /* kontener widgetu */
+        /* widget scope only — nie działa globalnie poza elementem, minimalne ryzyko kolizji */
+        .bar-widget-wrapper {{ position: relative; z-index: 5; }}
         .bar-container {{
           display:flex;
           align-items:flex-end;
@@ -634,12 +635,9 @@ if menu == "start":
           gap:34px;
           padding:20px;
           border-radius: 8px;
-          position: relative;
           box-shadow: 0 0 12px rgba(0,0,0,0.12);
           background:linear-gradient(180deg,#fff,#fbfbff);
         }}
-
-        /* pojedynczy słupek */
         .bar-item {{ text-align:center; width:80px;}}
         .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
         .bar {{
@@ -647,40 +645,29 @@ if menu == "start":
           margin: 0 auto;
           background-image: linear-gradient(to top,#7426ef,#e333dc);
           border-radius:6px;
-          height:0px;  /* start animacji z 0 */
+          height:0px;
           transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
           will-change: height;
           box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
         }}
         .bar-label {{
           margin-top:8px;
-          white-space: normal;          /* pozwól na zawijanie, nie obcinaj */
-          text-overflow: clip;         /* usuń trzy kropki */
+          white-space: normal;        /* pozwól na zawijanie */
+          text-overflow: clip;        /* usuń trzy kropki */
           overflow: visible;
-          display: inline-block;
           font-size:14px;
           color:#333;
         }}
-
-        /* widget container z wyższym z-index, żeby nie przykrywały go inne elementy */
-        .bar-widget {{ position: relative; padding-top: 12px; z-index: 5; }}
-
-        /* jeżeli chcesz ukryć tytuł, odkomentuj poniższą linię:
-        .bar-title {{ display: none; }}
-        */
-
-        /* Zapobiegamy, żeby Streamlit lokalne elementy (np. .stMarkdown) dodawały ellipsis:
-           celowe, ale ograniczone do obszaru widgetu */
-        div.stMarkdown div[data-testid="stMarkdownContainer"] .bar-widget * {{
+        /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
+        .bar-widget-wrapper * {{
           white-space: normal !important;
           text-overflow: clip !important;
           overflow: visible !important;
         }}
         </style>
 
-        <div class="bar-widget">
+        <div class="bar-widget-wrapper">
           <div class="bar-container">
-
             <div class="bar-item">
               <div class="bar-value">{zakończone}</div>
               <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
@@ -691,21 +678,20 @@ if menu == "start":
               <div class="bar-value">{w_trakcie}</div>
               <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
               <div class="bar-label">W trakcie</div>
-            </div>
+           </div>
 
             <div class="bar-item">
               <div class="bar-value">{anulowane}</div>
               <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
               <div class="bar-label">Anulowane</div>
             </div>
-
           </div>
         </div>
 
         <script>
         (function() {{
-          const startDelay = {start_delay};    // ms
-          const stagger = {stagger_ms};         // ms
+          const startDelay = {start_delay};
+          const stagger = {stagger_ms};
 
           function animateBar(id, delay) {{
             const el = document.getElementById(id);
@@ -716,7 +702,6 @@ if menu == "start":
             }}, delay);
           }}
 
-          // Delikatny start po wyrenderowaniu DOM
           setTimeout(() => {{
             animateBar('bar-zak', 0);
             animateBar('bar-wtr', stagger);
@@ -725,6 +710,7 @@ if menu == "start":
         }})();
         </script>
         """, unsafe_allow_html=True)
+
 
 
 
