@@ -626,7 +626,33 @@ if menu == "start":
         anim_dur = 0.6
         start_delay = 80
         stagger_ms = 80
-    
+
+        import os
+        is_streamlit_cloud = os.getenv("STREAMLIT_SERVER_HOST") is not None
+
+        if is_streamlit_cloud:
+            st.markdown("""
+            <style>
+            /* przykładowe selektory: dopasuj do elementów które zasłaniają widżet.
+               Nie usuwamy nic z repo — tylko nadpisujemy styl przy uruchomieniu w Cloud */
+            /* ukryje surowy blok <pre> / <code> (jeśli to on zasłania) */
+            div[data-testid="stMarkdownContainer"] pre,
+            div[data-testid="stMarkdownContainer"] code {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* jeśli widzisz konkretne klasy/ID w DevTools, dodaj je tutaj zamiast powyższych */
+            /* np. #debug-code { display: none !important; } */
+
+            /* upewnij się, że nie ukrywasz elementów .bar-label etc. */
+            </style>
+            """, unsafe_allow_html=True)
+
+	
         st.markdown(f"""
         <style> 
         .bar-widget-wrapper {{ position: relative; z-index: 5; }}
