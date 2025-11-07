@@ -624,17 +624,21 @@ if menu == "start":
         start_delay = 80
         stagger_ms = 80
 
-        st.markdown(f"""
+        # Ukryj cały HTML tego widżetu, żeby nie zasłaniał innych elementó
+        st.markdown("""
         <style>
-        .bar-widget-wrapper,
-        .bar-container,
-        .bar-item,
-        .bar,
-        .bar-value,
-        .bar-label {
-          display: none !important;
-          visibility: hidden !important;
+        /* Ukryj każdy element HTML, który powstanie w tym col1 */
+        [data-testid="stMarkdownContainer"] {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            z-index: 0 !important;
+            position: relative !important;
         }
+        </style>
+        """, unsafe_allow_html=True)
+
 
         /* widget scope only — nie działa globalnie poza elementem, minimalne ryzyko kolizji */
         .bar-widget-wrapper {{ position: relative; z-index: 5; }}
