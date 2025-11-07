@@ -624,24 +624,9 @@ if menu == "start":
         start_delay = 80     # ms opóźnienia przed startem animacji
         stagger_ms = 80      # ms opóźnienia między słupkami
 
-        # tymczasowy CSS ukrywający niechciany debug/fragment i wynoszący widget na wierzch
-        st.markdown("""
-        <style>
-        .stMarkdown pre, .stMarkdown code { display: none !important; }
-        .bar[data-target=""] { display: none !important; }
-        .bar-widget { position: relative !important; z-index: 9999 !important; }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # teraz wywołanie, które renderuje Twój animowany widget
-        st.markdown(f""" 
-          <style> ... Twoje style .bar-container itp. ... </style>
-          <div class="bar-widget"> ... </div>
-          <script> ... </script>
-        """, unsafe_allow_html=True)
-
         st.markdown(f"""
         <style>
+        /* kontener widgetu */
         .bar-container {{
           display:flex;
           align-items:flex-end;
@@ -653,27 +638,49 @@ if menu == "start":
           box-shadow: 0 0 12px rgba(0,0,0,0.12);
           background:linear-gradient(180deg,#fff,#fbfbff);
         }}
+
+        /* pojedynczy słupek */
         .bar-item {{ text-align:center; width:80px;}}
-        .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px;}}
+        .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
         .bar {{
           width:50px;
           margin: 0 auto;
           background-image: linear-gradient(to top,#7426ef,#e333dc);
           border-radius:6px;
-          height:0px;
+          height:0px;  /* start animacji z 0 */
           transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
           will-change: height;
           box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
         }}
-        .bar-label {{ margin-top:8px; white-space: nowrap; display: inline-block; font-size:14px;}}
-        .bar-widget {{ position: relative; padding-top: 36px; }}
-        /* ukryj tytuł */
+        .bar-label {{
+          margin-top:8px;
+          white-space: normal;          /* pozwól na zawijanie, nie obcinaj */
+          text-overflow: clip;         /* usuń trzy kropki */
+          overflow: visible;
+          display: inline-block;
+          font-size:14px;
+          color:#333;
+        }}
+
+        /* widget container z wyższym z-index, żeby nie przykrywały go inne elementy */
+        .bar-widget {{ position: relative; padding-top: 12px; z-index: 5; }}
+
+        /* jeżeli chcesz ukryć tytuł, odkomentuj poniższą linię:
         .bar-title {{ display: none; }}
+        */
+
+        /* Zapobiegamy, żeby Streamlit lokalne elementy (np. .stMarkdown) dodawały ellipsis:
+           celowe, ale ograniczone do obszaru widgetu */
+        div.stMarkdown div[data-testid="stMarkdownContainer"] .bar-widget * {{
+          white-space: normal !important;
+          text-overflow: clip !important;
+          overflow: visible !important;
+        }}
         </style>
 
         <div class="bar-widget">
           <div class="bar-container">
-            <!-- tytuł jest ukryty przez CSS -->
+
             <div class="bar-item">
               <div class="bar-value">{zakończone}</div>
               <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
@@ -709,6 +716,7 @@ if menu == "start":
             }}, delay);
           }}
 
+          // Delikatny start po wyrenderowaniu DOM
           setTimeout(() => {{
             animateBar('bar-zak', 0);
             animateBar('bar-wtr', stagger);
@@ -717,6 +725,7 @@ if menu == "start":
         }})();
         </script>
         """, unsafe_allow_html=True)
+
 
 
 
