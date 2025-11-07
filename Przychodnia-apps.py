@@ -651,13 +651,13 @@ if menu == "start":
         }}
         .bar-label {{ margin-top:8px; white-space: nowrap; display: inline-block; font-size:14px;}}
         .bar-widget {{ position: relative; padding-top: 36px; }}
-        .bar-title {{ position:absolute; top:8px; left:20px; font-weight:600; font-size:18px; background:white; padding:0 6px; z-index:2; }}
+        /* ukryj tytuł */
+        .bar-title {{ display: none; }}
         </style>
 
         <div class="bar-widget">
           <div class="bar-container">
-            <div class="bar-title">Wizyty:</div> 
-
+            <!-- tytuł jest ukryty przez CSS -->
             <div class="bar-item">
               <div class="bar-value">{zakończone}</div>
               <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
@@ -678,9 +678,6 @@ if menu == "start":
 
           </div>
         </div>
-        .bar-title {
-          display: none;
-        }
 
         <script>
         (function() {{
