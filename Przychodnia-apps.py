@@ -615,8 +615,6 @@ if menu == "start":
     # logarytmiczna skala spowalniająca wzrost słupka
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
-        # ... (logika obliczeniowa: anulowane, wizyty_plan, itd.) ...
-        # ... (funkcja skala) ...
 
         with col1:
         # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) ---
