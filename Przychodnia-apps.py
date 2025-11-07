@@ -626,6 +626,16 @@ if menu == "start":
 
         st.markdown(f"""
         <style>
+        .bar-widget-wrapper,
+        .bar-container,
+        .bar-item,
+        .bar,
+        .bar-value,
+        .bar-label {
+          display: none !important;
+          visibility: hidden !important;
+        }
+
         /* widget scope only — nie działa globalnie poza elementem, minimalne ryzyko kolizji */
         .bar-widget-wrapper {{ position: relative; z-index: 5; }}
         .bar-container {{
