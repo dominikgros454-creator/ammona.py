@@ -689,7 +689,7 @@ if menu == "start":
           background-image: linear-gradient(to top,#7426ef,#e333dc);
           border-radius:6px;
           height:0px;
-          transition: height {anim_dur}s cubic-bezier(.2,.9,.2,1);
+          transition: height {{anim_dur}}s cubic-bezier(.2,.9,.2,1);
           will-change: height;
           box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
         }}
