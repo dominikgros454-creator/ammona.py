@@ -1,5 +1,5 @@
 # import streamlit as st
-import sqlite3 
+import sqlite3
 import struct
 import pandas as pd
 from datetime import datetime, timedelta
@@ -14,28 +14,18 @@ import os
 import streamlit as st
 from streamlit.components.v1 import html
 import plotly.graph_objects as go
-import serial
-from serial import SerialTimeoutException
-import threading
-
 
 class Config:
     DB_FILE = 'przychodnia.db'
     TIMEZONE = pytz.timezone('Europe/Warsaw')
-    TWILIO_SID = st.secrets["TWILIO_SID"]
-    TWILIO_TOKEN = st.secrets["TWILIO_TOKEN"]
+    TWILIO_SID = 'ACb0fbd4abce2c9bed704fe14c729170a4'
+    TWILIO_TOKEN = 'cbb7189579a4651c12fcfef4bcd6c46c'
     TWILIO_NUMBER = '+48732126845'
     GOOGLE_CREDS = 'przychodnia-system-api-661462b19bdb.json'
     DEFAULT_DURATION = 30
     BUFFER_TIME = 10
     CHECK_INTERVAL = 15
     LICENSE_KEY = 'AKTYWNA'
-    
-class ModemConfig:
-    PORT = "COM3"           # zmień gdy inny port
-    BAUDRATE = 115200       # lub 9600 w zależności od modemu
-    TIMEOUT = 5
-    LOCK = threading.Lock()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH  = os.path.join(BASE_DIR, Config.DB_FILE)
@@ -92,36 +82,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-from datetime import datetime, timedelta
-
-def get_bot_count(conn):
-    """
-    Zwraca liczbę rezerwacji ze źródła 'Bot_SMS' w oknie ostatnich 30 minut.
-    conn: aktywne sqlite3.Connection lub ścieżka do DB (jeśli nie jest connection).
-    """
-    close_conn = False
-    if isinstance(conn, str):
-        conn = sqlite3.connect(conn)
-        close_conn = True
-
-    try:
-        teraz = datetime.now()
-        prog = teraz - timedelta(minutes=30)
-        # SQLite expects 'YYYY-MM-DD HH:MM:SS' format
-        prog_str = prog.strftime("%Y-%m-%d %H:%M:%S")
-        q = """
-            SELECT COUNT(*) FROM Wizyty
-            WHERE Zrodlo = 'Bot_SMS'
-              AND datetime(Data || ' ' || Godzina) >= ?
-        """
-        cur = conn.cursor()
-        cur.execute(q, (prog_str,))
-        cnt = cur.fetchone()[0] or 0
-        return int(cnt)
-    finally:
-        if close_conn:
-            conn.close()
-
 def get_calendar_service():
     creds = service_account.Credentials.from_service_account_file(
         Config.GOOGLE_CREDS,
@@ -134,44 +94,6 @@ init_db()
 conn = sqlite3.connect(Config.DB_FILE)
 
 st.set_page_config(page_title="Przychodnia", layout="wide")
-
-st.markdown("""
-<style>
-/* Ukrywa surowe linie kodu HTML i <pre><code> bloki */
-div[data-testid="stMarkdownContainer"] pre,
-div[data-testid="stMarkdownContainer"] code {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-def init_modem():
-    try:
-        with ModemConfig.LOCK:
-            ser = serial.Serial(port=ModemConfig.PORT,
-                                baudrate=ModemConfig.BAUDRATE,
-                                timeout=ModemConfig.TIMEOUT,
-                                write_timeout=ModemConfig.TIMEOUT)
-            time.sleep(0.5)
-            ser.reset_input_buffer()
-            ser.reset_output_buffer()
-            ser.write(b'ATE0\r')
-            time.sleep(0.2)
-            _ = ser.read(ser.in_waiting or 64)
-            ser.write(b'AT+CMGF=1\r')
-            time.sleep(0.2)
-            _ = ser.read(ser.in_waiting or 64)
-            ser.close()
-        return True
-    except Exception as e:
-        st.warning(f"Nie udało się zainicjalizować modemu: {e}")
-        return False
-
 
 # --- 2️⃣ Inicjalizacja menu w state ---------------------
 # 1️⃣ Menu na samej górze (biały header)
@@ -189,61 +111,14 @@ def svg_data_uri(path: str) -> str:
     b64 = base64.b64encode(raw).decode("utf-8")
     return f"data:image/svg+xml;base64,{b64}"
 
-def wyslij_sms_modem(numer: str, tresc: str, retries: int = 2, timeout_send: int = 30):
-    last_exc = None
-    for attempt in range(retries + 1):
-        try:
-            with ModemConfig.LOCK:
-                ser = serial.Serial(port=ModemConfig.PORT,
-                                    baudrate=ModemConfig.BAUDRATE,
-                                    timeout=ModemConfig.TIMEOUT,
-                                    write_timeout=ModemConfig.TIMEOUT)
-                time.sleep(0.2)
-                ser.reset_input_buffer()
-                ser.reset_output_buffer()
-
-                ser.write(b'AT+CMGF=1\r')
-                time.sleep(0.2)
-                _ = ser.read(ser.in_waiting or 64).decode(errors='ignore')
-
-                cmd = f'AT+CMGS="{numer}"\r'.encode()
-                ser.write(cmd)
-                time.sleep(0.2)
-                prompt = ser.read(ser.in_waiting or 64).decode(errors='ignore')
-                # niektóre modemy nie zwracają '>' od razu — kontynuujemy
-
-                ser.write(tresc.encode('utf-8', errors='replace'))
-                ser.write(bytes([26]))  # CTRL+Z
-                ser.flush()
-
-                end_time = time.time() + timeout_send
-                buffer = ""
-                while time.time() < end_time:
-                    chunk = ser.read(ser.in_waiting or 1).decode(errors='ignore')
-                    if chunk:
-                        buffer += chunk
-                        if "+CMGS" in buffer:
-                            ser.close()
-                            st.success(f"SMS wysłany do {numer}")
-                            return True
-                        if "ERROR" in buffer:
-                            raise Exception(f"Modem zwrócił ERROR: {buffer}")
-                    else:
-                        time.sleep(0.2)
-
-                ser.close()
-                raise TimeoutError(f"Brak potwierdzenia wysyłki z modemu. Odpowiedź: {buffer}")
-        except Exception as e:
-            last_exc = e
-            time.sleep(1)
-            continue
-    st.warning(f"Nie udało się wysłać SMS do {numer}: {last_exc}")
-    return False
-
-
 def wyslij_sms(numer, tresc):
-    # Jeżeli chcesz przetworzyć polskie znaki, dodaj transliterację tutaj
-    return wyslij_sms_modem(numer, tresc)
+    client = Client(Config.TWILIO_SID, Config.TWILIO_TOKEN)
+    message = client.messages.create(
+        body=tresc,
+        from_=Config.TWILIO_NUMBER,
+        to=numer
+    )
+    st.success(f"SMS wysłany do {numer}")
 
 def wyslij_sms_potwierdzenie(pacjent_id, data_str, godzina, conn):
     # 1) Budujemy treść SMS-a
@@ -582,7 +457,7 @@ elif menu == "ustawienia":
 
 
 if menu == "start":
-    col1, col2 = st.columns([1, 1])
+    col1, col_mid, col2 = st.columns([1, 0.6, 1])
 
     # 1) liczymy anulowane
     anulowane = pd.read_sql(
@@ -627,172 +502,73 @@ if menu == "start":
         MAX_WYSOKOSC = 280  # np. 280px maksymalnej wysokości słupka
         MAX_LOG = math.log(1 + 100)  # zakładamy że 100 wizyt to „górna granica”
 
-        # logarytmiczna skala spowalniająca wzrost słupka
-        # POPRAWKA WCIĘĆ: Ta linia musi być wcięta na ten sam poziom, co reszta funkcji!
+    # logarytmiczna skala spowalniająca wzrost słupka
         return int(MAX_WYSOKOSC * math.log(1 + v) / MAX_LOG)
 
-        target_zak = skala(zakończone)
-        target_wtr = skala(w_trakcie)
-        target_anul = skala(anulowane)
-        anim_dur = 0.6
-        start_delay = 80
-        stagger_ms = 80
-		
-    # Zakładam, że ten blok `with col1:` jest na poziomie, z którego został wywołany
     with col1:
-        # --- Poprawnie opakowany pierwszy widget (wykres słupkowy) --- #
-
-        import os
-        is_streamlit_cloud = os.getenv("STREAMLIT_SERVER_HOST") is not None
-
-        if is_streamlit_cloud:
-            st.markdown("""
-            <style>
-            /* przykładowe selektory: dopasuj do elementów które zasłaniają widżet.
-               Nie usuwamy nic z repo — tylko nadpisujemy styl przy uruchomieniu w Cloud */
-            /* ukryje surowy blok <pre> / <code> (jeśli to on zasłania) */
-            div[data-testid="stMarkdownContainer"] pre,
-            div[data-testid="stMarkdownContainer"] code {
-                display: none !important;
-                visibility: hidden !important;
-                height: 0 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
-            /* jeśli widzisz konkretne klasy/ID w DevTools, dodaj je tutaj zamiast powyższych */
-            /* np. #debug-code { display: none !important; } */
-
-            /* upewnij się, że nie ukrywasz elementów .bar-label etc. */
-            </style>
-            """, unsafe_allow_html=True)
-
-	
         st.markdown(f"""
-        <style> 
-        .bar-widget-wrapper {{ position: relative; z-index: 5; }}
-        .bar-container {{
+        <style>
+         .bar-container {{
           display:flex;
           align-items:flex-end;
           height:320px;
           gap:34px;
           padding:20px;
+          border: 1px solid #fffffff;
           border-radius: 8px;
-          box-shadow: 0 0 12px rgba(0,0,0,0.12);
-          background:linear-gradient(180deg,#fff,#fbfbff);
+          position: relative;
+          box-shadow: 0 0 12px rgba(0, 0, 0, 0.2); /* łagodny cień */
         }}
-        .bar-item {{ text-align:center; width:80px;}}
-        .bar-value {{ font-weight:bold; margin-bottom:6px; font-size:16px; color:#222;}}
-        .bar {{
-          width:50px;
-          margin: 0 auto;
-          background-image: linear-gradient(to top,#7426ef,#e333dc);
-          border-radius:6px;
-          height:0px;
-          transition: height {{anim_dur}}s cubic-bezier(.2,.9,.2,1);
-          will-change: height;
-          box-shadow: inset 0 -8px 18px rgba(0,0,0,0.06);
+        .bar-item {{ text-align:center;}}
+        .bar-value {{ font-weight:bold; margin-bottom:6px; }}
+        .bar {{ width:50px; align-self: center; margin: 0 auto; background-image: linear-gradient(
+            to top,
+            #7426ef,
+            #e333dc
+            );
+            border-radius:6px; transition:height .3s; }}
+        .bar-label {{ margin-top:8px; white-space: nowrap; display: inline-block;}}
+        .bar-widget {{
+          position: relative;
+          padding-top: 36px;
         }}
-        .bar-label {{
-          margin-top:8px;
-          white-space: normal;
-          text-overflow: clip;
-          overflow: visible;
-          font-size:14px;
-          color:#333;
+        .bar-widget .widget-title {{
+          position: absolute;
+          top: 8px;
+          left: 16px;
+          font-weight: 500;
+          font-size: 18px;
         }}
-        /* zabezpieczenie: tylko wewnątrz wrappera nadpisujemy overflow, nie globalnie */
-        .bar-widget-wrapper * {{
-          white-space: normal !important;
-          text-overflow: clip !important;
-          overflow: visible !important;
+        .bar-title {{
+          position: absolute;
+          top: 8px;
+          left: 20px;
+          font-weight: 570;
+          font-size: 18px;
+          background: white;
+          padding: 0 6px;
         }}
         </style>
-
-        <div class="bar-widget-wrapper">
+        <div class="bar-widget">
           <div class="bar-container">
-            <div class="bar-item">
-              <div class="bar-value">{zakończone}</div>
-              <div class="bar" data-target="{target_zak}" id="bar-zak"></div>
-              <div class="bar-label">Zakończone</div>
-            </div>
-
-            <div class="bar-item">
-              <div class="bar-value">{w_trakcie}</div>
-              <div class="bar" data-target="{target_wtr}" id="bar-wtr"></div>
-              <div class="bar-label">W trakcie</div>
-            </div>
-
-            <div class="bar-item">
-              <div class="bar-value">{anulowane}</div>
-              <div class="bar" data-target="{target_anul}" id="bar-anul"></div>
-              <div class="bar-label">Anulowane</div>
-            </div>
+          <div class="bar-title">Wizyty:</div>
+          <div class="bar-item">
+            <div class="bar-value">{zakończone}</div>
+            <div class="bar" style="height: {skala(zakończone)}px;"></div>
+            <div class="bar-label">Zakończone</div>
+          </div>
+          <div class="bar-item">
+            <div class="bar-value">{w_trakcie}</div>
+            <div class="bar" style="height: {skala(w_trakcie)}px;"></div>
+            <div class="bar-label">W trakcie</div>
+       </div>
+          <div class="bar-item">
+            <div class="bar-value">{anulowane}</div>
+            <div class="bar" style="height: {skala(anulowane)}px;"></div>
+            <div class="bar-label">Anulowane</div>
           </div>
         </div>
-
-        <script>
-        (function() {{
-          const startDelay = {start_delay};
-          const stagger = {stagger_ms};
-          function animateBar(id, delay) {{
-            const el = document.getElementById(id);
-            if (!el) return;
-            const target = el.getAttribute('data-target') || '0';
-            setTimeout(() => {{ 
-            el.style.height = target + 'px'; 
-            }}, delay);
-          }}
-
-          setTimeout(() => {{
-            animateBar('bar-zak', 0);
-            animateBar('bar-wtr', stagger);
-            animateBar('bar-anul', stagger * 2);
-          }}, startDelay);
-        }})();
-        </script>
-        """, unsafe_allow_html=True) # POPRAWKA: Zamknięcie st.markdown
-
-        # --- widget: nowe rezerwacje z bota ---
-        bot_count = get_bot_count(conn) # TA LINIA JEST TERAZ POPRAWNIE WCIĘTA
-    
-        st.markdown(f"""
-        <style>
-        .bot-widget {{
-          width: 180px;
-          height: 180px;
-          border-radius: 14px;
-          background: linear-gradient(180deg, #ffffff 0%, #f7f7ff 100%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          margin-top: 18px;
-          margin-left: 12px;
-          box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-          border: 1px solid #eee;
-        }}
-        .bot-title {{
-          font-size: 13px;
-          color: #666;
-          font-weight: 600;
-          margin-bottom: 6px;
-        }}
-        .bot-number {{
-          font-size: 56px;
-          font-weight: 700;
-          color: #7426ef;
-          letter-spacing: -1px;
-        }}
-        </style>
-
-        <div class="bot-widget">
-          <div class="bot-title">Nowe rezerwacje z bota</div>
-          <div class="bot-number">{bot_count}</div>
-          <div style="font-size:12px;color:#999;margin-top:6px;">ostatnie 30 min</div>
-        </div>
         """, unsafe_allow_html=True)
-        # --- koniec widgetu ---
 
 
     with col2:
@@ -814,16 +590,16 @@ if menu == "start":
         """, conn)
 
         if df.empty:
-            st.markdown("""
-            <div style="margin-left: 140px; color: #555;">
-              Brak zaplanowanych wizyt.
-            </div>
-            """, unsafe_allow_html=True)
+           st.markdown("""
+           <div style="margin-left: 140px; color: #555;">
+             Brak zaplanowanych wizyt.
+           </div>
+           """, unsafe_allow_html=True)
         else:
             teraz = datetime.now()
             for _, r in df.iterrows():
                 dt = datetime.strptime(f"{r['Data']} {r['Godzina']}",
-                                         "%Y-%m-%d %H:%M")
+                                       "%Y-%m-%d %H:%M")
                 mins = int((dt - teraz).total_seconds() // 60)
                 st.markdown(f"""
                   <div style="
@@ -835,14 +611,40 @@ if menu == "start":
                       max-width: 300px;
                       margin-left: 40px;
                       box-shadow: 0 0 0 1px #7426ef, 0 0 0 1px #e333dc;
-                    ">
+                   ">
                       <strong>Wizyta u dr {r['Imie']} {r['Nazwisko']}</strong><br>
                       <span style="color: grey; font-size: 14px;">
                           Za {mins} minut
                       </span>
                   </div>
               """, unsafe_allow_html=True)
-		  
+
+    with col_mid:
+        liczba_wiadomosci = 8  # <- zastąp dynamiczną wartością z bazy jeśli chcesz
+
+        st.markdown(f"""
+        <div style="
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 16px;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        ">
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;">
+            Wysłane wiadomości
+          </div>
+          <div style="font-size: 36px; font-weight: bold;">
+            {liczba_wiadomosci}
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 elif menu == "rezerwacja":
     st.header("Rezerwacja wizyty")
 
